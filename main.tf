@@ -1,6 +1,6 @@
 terraform {
   required_version = ">=0.12"
-  # store state in Azure S3
+  # store state in Azure S3, resource group, storage account, container need to be created ahead of time.
   backend "azurerm" {
     resource_group_name  = "tfstaterg01"
     storage_account_name = "tfstate01790900905"
@@ -118,6 +118,9 @@ resource "azurerm_linux_virtual_machine" "vm1" {
     name                 = var.os_disk_name
   }
 }
+data "local_file" "config_txt" {
+  filename = "config.txt"
+}
 resource "null_resource" "run_jdiscordbot" {
   provisioner "remote-exec" {
     connection {
@@ -127,12 +130,17 @@ resource "null_resource" "run_jdiscordbot" {
       private_key = file(var.ssh_key_path_priv)
     }
     inline = [
-      "[ -d \"tf-jdiscord\" ] && rm -rf tf-jdiscord",
-      "git clone https://github.com/RCFromCLE/tf-jdiscord.git",
-      "ls",
-      "cd tf-jdiscordyes",
-      "ls",
-      "sudo bash tf-jdiscord/run_jdiscordmusicbot.sh"
+      "${var.remove_tfjdiscord_command}",
+      "sudo add-apt-repository -y ppa:openjdk-r/ppa",
+      "sudo apt-get update",
+      "sudo apt-get install -y ${var.java_version}",
+      "git clone ${var.repo_url}",
+      "cat <<EOF > ${var.jdiscord_path}/config.txt",
+      "${data.local_file.config_txt.content}",
+      "EOF",
+      "cd ${var.jdiscord_path}",
+      "nohup sudo java -jar ${var.jdiscord_path}${var.jar_path} &",
+      "sleep 10"
     ]
   }
 }

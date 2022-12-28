@@ -1,0 +1,202 @@
+terraform {
+  required_version = ">=0.12"
+    # store state in Azure S3
+    backend "azurerm" {
+      resource_group_name  = "tfstaterg01"
+      storage_account_name = "tfstate01790900905"
+      container_name       = "jdb-tf-state"
+      key                  = "terraform.tfstate"
+    }
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~>2.0"
+    }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~>4.0"
+    }
+  }
+}
+
+# configure the microsoft azure provider
+provider "azurerm" {
+  features {}
+  subscription_id = var.sub
+}
+
+# create a resource group
+resource "azurerm_resource_group" "rg1" {
+  name     = var.rg
+  location = var.rg_loc
+}
+
+# create virtual network
+resource "azurerm_virtual_network" "vnet1" {
+  name                = var.net
+  address_space       = ["10.0.0.0/23"]
+  location            = azurerm_resource_group.rg1.location
+  resource_group_name = azurerm_resource_group.rg1.name
+}
+
+# create subnet
+resource "azurerm_subnet" "subnet1" {
+  name                 = var.subnet
+  resource_group_name  = azurerm_resource_group.rg1.name
+  virtual_network_name = azurerm_virtual_network.vnet1.name
+  address_prefixes     = ["10.0.1.0/24"]
+}
+
+# create public ips
+resource "azurerm_public_ip" "public_ip" {
+  name                = var.pub_ip
+  location            = azurerm_resource_group.rg1.location
+  resource_group_name = azurerm_resource_group.rg1.name
+  allocation_method   = var.pub_allocation_method
+}
+
+# create network security group and rule
+resource "azurerm_network_security_group" "nsg" {
+  name                = var.nsg
+  location            = azurerm_resource_group.rg1.location
+  resource_group_name = azurerm_resource_group.rg1.name
+
+  security_rule {
+    name                       = "ssh"
+    priority                   = 1001
+    direction                  = "inbound"
+    access                     = "allow"
+    protocol                   = "tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+}
+
+# create network interface
+resource "azurerm_network_interface" "nic" {
+  name                = var.nic_name
+  location            = azurerm_resource_group.rg1.location
+  resource_group_name = azurerm_resource_group.rg1.name
+
+  ip_configuration {
+    name                          = var.nic_priv_ip_name
+    subnet_id                     = azurerm_subnet.subnet1.id
+    private_ip_address_allocation = var.priv_allocation_method
+    public_ip_address_id          = azurerm_public_ip.public_ip.id
+  }
+}
+
+# connect the security group to the network interface
+resource "azurerm_network_interface_security_group_association" "nsg_nic_assoc" {
+  network_interface_id      = azurerm_network_interface.nic.id
+  network_security_group_id = azurerm_network_security_group.nsg.id
+}
+
+# create an azure linux vm to run jdiscordbot
+resource "azurerm_linux_virtual_machine" "vm1" {
+  name                            = var.vm_name
+  resource_group_name             = azurerm_resource_group.rg1.name
+  location                        = azurerm_resource_group.rg1.location
+  admin_username                  = var.vm_admin_username
+  size                            = var.vm_size
+  network_interface_ids           = [azurerm_network_interface.nic.id]
+  disable_password_authentication = true
+  admin_ssh_key {
+    username   = var.vm_admin_username
+    public_key = file(var.ssh_key_path_pub)
+  }
+  source_image_reference {
+    publisher = var.vm_image_publisher
+    offer     = var.vm_image_offer
+    sku       = var.vm_image_sku
+    version   = var.vm_image_version
+  }
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+    name                 = var.os_disk_name
+  }
+  
+}
+# generate a random string to be used as storage account name
+resource "random_string" "random" {
+  length           = 14
+  lower   = true
+  upper   = false
+  special = false
+  numeric  = true
+  }
+output "output_sa_name" {
+  value = random_string.random.result
+}
+# create an azure storage account
+resource "azurerm_storage_account" "sa1" {
+  name                     = random_string.random.result
+  resource_group_name      = azurerm_resource_group.rg1.name
+  location                 = azurerm_resource_group.rg1.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+}
+
+# create a file share in the azure storage account
+resource "azurerm_storage_share" "fs1" {
+  name                 = var.file_share_name
+  storage_account_name = azurerm_storage_account.sa1.name
+  quota                = var.quota
+}
+# create managed disk foor jdb source files to be attached to vm
+resource "azurerm_managed_disk" "jdb-disk" {
+  name                 = var.md_name
+  location             = azurerm_resource_group.rg1.location
+  resource_group_name  = azurerm_resource_group.rg1.name
+  storage_account_type = "Standard_LRS"
+  create_option        = "Empty"
+  disk_size_gb         = 10
+}
+# mount the file share on the azure vm
+resource "azurerm_virtual_machine_data_disk_attachment" "vm_disk_attach" {
+  managed_disk_id      = azurerm_managed_disk.jdb-disk.id
+  virtual_machine_id   = azurerm_linux_virtual_machine.vm1.id
+  lun                  = 0
+  caching              = "ReadWrite"
+  create_option        = "attach"
+}
+
+
+# copy the jdiscordbot directory to the file share
+resource "null_resource" "copy_jdiscordbot" {
+  provisioner "local-exec" {
+    command = "az storage directory create --account-name ${azurerm_storage_account.sa1.name} --account-key ${azurerm_storage_account.sa1.primary_access_key} --share-name ${azurerm_storage_share.fs1.name} --name jdiscordmusicbot"
+  }
+}
+
+# transfer the jdiscordbot files to the file share
+resource "null_resource" "transfer_jdiscordbot" {
+  provisioner "local-exec" {
+    command = "az storage file upload-batch --account-name ${azurerm_storage_account.sa1.name} --account-key ${azurerm_storage_account.sa1.primary_access_key} --source ./jdiscordmusicbot --destination ${var.file_share_name}"
+  }
+}
+
+# run the jdiscordbot .jar file on the azure vm
+resource "null_resource" "run_jdiscordbot" {
+  depends_on = [azurerm_virtual_machine_data_disk_attachment.vm_disk_attach]
+  provisioner "remote-exec" {
+    connection {
+      type        = "ssh"
+      user        = var.vm_admin_username
+      host        = azurerm_linux_virtual_machine.vm1.public_ip_address
+      private_key = file(var.ssh_key_path_priv)
+    }
+    inline = [
+      "sudo mkdir /mnt/jdb-files",
+      "sudo mount -t cifs //${azurerm_storage_account.sa1.name}.file.core.windows.net/${azurerm_storage_account.sa1.name}/jdb-files /mnt/jdb-files -o vers=3.0,username=${azurerm_storage_account.sa1.name},password=${azurerm_storage_account.sa1.primary_access_key},dir_mode=0777,file_mode=0777",
+      "sudo apt-get update",
+      "sudo apt-get install -y openjdk-8-jdk",
+      var.run_jdb,
+    ]
+  }
+}
+
+

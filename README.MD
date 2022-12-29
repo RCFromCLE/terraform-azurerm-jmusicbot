@@ -1,4 +1,4 @@
-tf-jdiscord
+terraform-azure-jmusicbot
 ========================
 
 This module installs, configures, and runs JMusicBot (https://jmusicbot.com/) on an Ubuntu 18 instance hosted in Azure cloud. Simply fill in the sub variable in the terraform.tfvars file and run a terraform init, terraform plan, terraform apply. 

@@ -1,13 +1,17 @@
 tf-jdiscord
 ========================
 
-This module installs, configures, and runs JMusicBot (https://jmusicbot.com/) on an Ubuntu 18 instance hosted in Azure cloud. Simply fill in the sub variable in the terraform.tfvars file and run a terraform init, terraform plan, terraform apply.
+This module installs, configures, and runs JMusicBot (https://jmusicbot.com/) on an Ubuntu 18 instance hosted in Azure cloud. Simply fill in the sub variable in the terraform.tfvars file and run a terraform init, terraform plan, terraform apply. 
+
+
 
 Requirements
 ------------
 
 -   A valid Azure subscription
 -   Terraform 0.12 or later
+-   Discord API token from your server. https://jmusicbot.com/adding-your-bot/
+-   Azure S3 resources need to be precreated
 
 Providers
 ---------
@@ -59,14 +63,8 @@ To use this module, add the following block to your Terraform configuration:
 
 ```
 module "jdiscord" {
-  source = "git::https://github.com/tmknom/terraform-azure-jdiscord.git"
+  source = "git::https://github.com/RCFromCLE/tf-jdiscord.git"
 
   sub               = var.sub
-  rg                = var.rg
-  rg_loc            = var.rg_loc
-  net               = var.net
-  subnet            = var.subnet
-  pub_ip            = var.pub_ip
-  nsg               = var.nsg
-  nic_name
+
 ```

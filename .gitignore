@@ -1,0 +1,4 @@
+config.txt
+terraform.lock.hcl
+*.tfstate
+.terraform/

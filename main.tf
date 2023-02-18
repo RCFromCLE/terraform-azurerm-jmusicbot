@@ -19,7 +19,7 @@ terraform {
   }
 }
 
-# configure the microsoft azure provider
+# configure the microsoft azure providers
 provider "azurerm" {
   features {}
   subscription_id = var.sub
@@ -144,3 +144,5 @@ resource "null_resource" "run_jdiscordbot" {
     ]
   }
 }
+
+

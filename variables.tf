@@ -174,7 +174,7 @@ variable "jdiscord_path" {
 }
 
 variable "jar_path" {
-  default = "/JMusicBot-0.3.8.jar"
+  default = "/JMusicBot-0.3.9.jar"
 }
 
 variable "java_version" {

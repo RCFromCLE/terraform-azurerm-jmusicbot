@@ -3,7 +3,7 @@ terraform {
   # store state in Azure S3, resource group, storage account, container need to be created ahead of time.
   backend "azurerm" {
     resource_group_name  = "tfstaterg01"
-    storage_account_name = "tfstate01790900905"
+    storage_account_name = "tfstate011503435350"
     container_name       = "jdb-tf-state"
     key                  = "terraform.tfstate"
   }
@@ -122,27 +122,25 @@ data "local_file" "config_txt" {
   filename = "config.txt"
 }
 resource "null_resource" "run_jdiscordbot" {
+  # Trigger re-provisioning if the script changes or on other relevant changes
+  triggers = {
+    always_run = "${timestamp()}"
+  }
+
+  connection {
+    type        = "ssh"
+    user        = var.vm_admin_username
+    private_key = file(var.ssh_key_path_priv)
+    host        = azurerm_public_ip.public_ip.ip_address
+  }
+
   provisioner "remote-exec" {
-    connection {
-      type        = "ssh"
-      user        = var.vm_admin_username
-      host        = azurerm_linux_virtual_machine.vm1.public_ip_address
-      private_key = file(var.ssh_key_path_priv)
-    }
     inline = [
-      "${var.remove_tfjdiscord_command}",
-      "sudo add-apt-repository -y ppa:openjdk-r/ppa",
       "sudo apt-get update",
-      "sudo apt-get install -y ${var.java_version}",
-      "git clone ${var.repo_url}",
-      "cat <<EOF > ${var.jdiscord_path}/config.txt",
-      "${data.local_file.config_txt.content}",
-      "EOF",
-      "cd ${var.jdiscord_path}",
-      "nohup sudo java -jar ${var.jdiscord_path}${var.jar_path} &",
-      "sleep 10"
+      "sudo apt-get install -y git",
+      "git clone ${var.repo_url} ~/tf-jdiscord",
+      "cd ~/tf-jdiscord && chmod +x setup_discord_bot.sh",
+      "cd ~/tf-jdiscord && sudo ./setup_discord_bot.sh",
     ]
   }
 }
-
-

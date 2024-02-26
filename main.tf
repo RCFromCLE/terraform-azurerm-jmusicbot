@@ -138,9 +138,13 @@ resource "null_resource" "run_jdiscordbot" {
     inline = [
       "sudo apt-get update",
       "sudo apt-get install -y git",
-      "git clone ${var.repo_url} ~/tf-jdiscord",
-      "cd ~/tf-jdiscord && chmod +x setup_discord_bot.sh",
-      "cd ~/tf-jdiscord && sudo ./setup_discord_bot.sh",
+      # Check if the directory exists and remove it if it does
+      "if [ -d '/home/rc/tf-jdiscord' ]; then rm -rf /home/rc/tf-jdiscord; fi",
+      # Proceed to clone the repository
+      "git clone ${var.repo_url} /home/rc/tf-jdiscord",
+      # Navigate to the repository directory, ensure the script is executable, and run it
+      "chmod +x /home/rc/tf-jdiscord/setup_discord_bot.sh",
+      "sudo /home/rc/tf-jdiscord/setup_discord_bot.sh",
     ]
   }
 }

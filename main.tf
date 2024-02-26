@@ -134,17 +134,23 @@ resource "null_resource" "run_jdiscordbot" {
     host        = azurerm_public_ip.public_ip.ip_address
   }
 
-  provisioner "remote-exec" {
-    inline = [
-      "sudo apt-get update",
-      "sudo apt-get install -y git",
-      # Check if the directory exists and remove it if it does
-      "if [ -d '/home/rc/tf-jdiscord' ]; then rm -rf /home/rc/tf-jdiscord; fi",
-      # Proceed to clone the repository
-      "git clone ${var.repo_url} /home/rc/tf-jdiscord",
-      # Navigate to the repository directory, ensure the script is executable, and run it
-      "chmod +x /home/rc/tf-jdiscord/setup_discord_bot.sh",
-      "sudo /home/rc/tf-jdiscord/setup_discord_bot.sh",
-    ]
-  }
+
+provisioner "remote-exec" {
+  inline = [
+    "sleep 20",
+    "sudo apt-get update",
+    "sudo apt-get install -y git",
+    # Ensure the directory exists for the script; clear it if needed
+    "sudo rm -rf /home/rc/tf-jdiscord || true",
+    "sudo mkdir -p /home/rc/tf-jdiscord",
+    # Navigate to the directory
+    "cd /home/rc/tf-jdiscord",
+    # Download the setup script from Git
+    "sudo git clone ${var.repo_url} .",
+    # Assuming the setup_discord_bot.sh is at the root of the repo
+    "sudo chmod +x setup_discord_bot.sh",
+    "sudo ./setup_discord_bot.sh"
+  ]
+}
+
 }

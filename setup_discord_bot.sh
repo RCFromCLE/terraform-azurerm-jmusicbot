@@ -5,17 +5,8 @@ sudo add-apt-repository -y ppa:openjdk-r/ppa
 sudo apt-get update
 sudo apt-get install -y openjdk-8-jdk
 
-# Prepare the jdiscordmusicbot directory
-if [ -d "~/tf-jdiscord" ]; then
-  rm -rf ~/tf-jdiscord
-fi
-mkdir -p ~/tf-jdiscord/jdiscordmusicbot
-cd ~/tf-jdiscord/jdiscordmusicbot
 
-# Clone the Discord bot repository
-git clone https://github.com/RCFromCLE/tf-jdiscord.git ~/tf-jdiscord
-
-# No need to manually create config.txt as it's assumed to be part of the repo
+# Assuming config.txt is part of the repo, no action needed
 
 # Create a systemd service file for the Discord bot
 cat <<EOF | sudo tee /etc/systemd/system/jdiscordbot.service
@@ -24,12 +15,13 @@ Description=JDiscord Music Bot
 After=network.target
 
 [Service]
+Type=simple
 User=rc
-# Adjust the WorkingDirectory if necessary
+# Ensure the WorkingDirectory points to where the bot actually resides
 WorkingDirectory=/home/rc/tf-jdiscord/jdiscordmusicbot
-# Update the ExecStart path according to where the JAR file is located
+# Ensure the ExecStart command points to the correct jar file location
 ExecStart=/usr/bin/java -jar /home/rc/tf-jdiscord/jdiscordmusicbot/JMusicBot-0.3.9.jar
-Restart=always
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target

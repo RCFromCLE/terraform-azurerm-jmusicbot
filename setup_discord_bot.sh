@@ -1,52 +1,63 @@
 #!/bin/bash
 
-# Update and install Java
-sudo add-apt-repository -y ppa:openjdk-r/ppa
-sudo apt-get update
-sudo apt-get install -y openjdk-8-jdk
+# Define variables
+USER_HOME=$(eval echo ~$SUDO_USER)
+BOT_DIRECTORY="$USER_HOME/tf-jdiscord"
+JDISCORD_GIT_REPO="https://github.com/RCFromCLE/tf-jdiscord.git"
+JAR_NAME="JMusicBot-0.3.9.jar"
+CONFIG_FILE_NAME="config.txt"
+SERVICE_NAME="jdiscordbot"
 
-# Prepare the jdiscordmusicbot directory
-if [ -d "/home/rc/tf-jdiscord" ]; then
-  sudo rm -rf /home/rc/tf-jdiscord
+# Ensure the script is run with elevated privileges
+if [ "$EUID" -ne 0 ]
+  then echo "Please run as root"
+  exit
 fi
-sudo mkdir -p /home/rc/tf-jdiscord/jdiscordmusicbot
-cd /home/rc/tf-jdiscord/jdiscordmusicbot
+
+# Update and install Java
+add-apt-repository -y ppa:openjdk-r/ppa
+apt-get update
+apt-get install -y openjdk-8-jdk
+
+# Remove the existing bot directory if it exists, then recreate it
+rm -rf $BOT_DIRECTORY || true
+mkdir -p $BOT_DIRECTORY/jdiscordmusicbot
+
+# Adjust ownership and permissions before cloning
+chown $SUDO_USER:$SUDO_USER $BOT_DIRECTORY
+chmod 755 $BOT_DIRECTORY
 
 # Clone the Discord bot repository
-git clone https://github.com/RCFromCLE/tf-jdiscord.git /home/rc/tf-jdiscord
+sudo -u $SUDO_USER git clone $JDISCORD_GIT_REPO $BOT_DIRECTORY/jdiscordmusicbot
 
-# Assuming config.txt is part of the repo, no action needed
+# Create config.txt within the jdiscordmusicbot directory using placeholder values
+sudo -u $SUDO_USER bash -c "cat <<EOF > $BOT_DIRECTORY/jdiscordmusicbot/$CONFIG_FILE_NAME
+# Your config content here
+EOF"
 
-# Create the start_jdiscordbot.sh script
-cat <<EOF | sudo tee /home/rc/tf-jdiscord/start_jdiscordbot.sh
-#!/bin/bash
-
-cd /home/rc/tf-jdiscord/jdiscordmusicbot
-git pull
-/usr/bin/java -jar JMusicBot-0.3.9.jar
-EOF
-
-# Make the script executable
-sudo chmod +x /home/rc/tf-jdiscord/start_jdiscordbot.sh
+# Adjust permissions of config.txt
+chmod 644 $BOT_DIRECTORY/jdiscordmusicbot/$CONFIG_FILE_NAME
 
 # Create a systemd service file for the Discord bot
-cat <<EOF | sudo tee /etc/systemd/system/jdiscordbot.service
+cat <<EOF | sudo tee /etc/systemd/system/$SERVICE_NAME.service
 [Unit]
 Description=JDiscord Music Bot
 After=network.target
 
 [Service]
 Type=simple
-User=rc
-WorkingDirectory=/home/rc/tf-jdiscord/jdiscordmusicbot
-ExecStart=/home/rc/tf-jdiscord/start_jdiscordbot.sh
+User=$SUDO_USER
+WorkingDirectory=$BOT_DIRECTORY/jdiscordmusicbot
+ExecStart=/usr/bin/java -jar $BOT_DIRECTORY/jdiscordmusicbot/$JAR_NAME
 Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-# Reload systemd, enable and start the jdiscordbot service
-sudo systemctl daemon-reload
-sudo systemctl enable jdiscordbot
-sudo systemctl start jdiscordbot
+# Reload systemd to recognize the new service
+systemctl daemon-reload
+
+# Enable and start the Discord bot service
+systemctl enable $SERVICE_NAME
+systemctl start $SERVICE_NAME

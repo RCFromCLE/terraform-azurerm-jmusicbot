@@ -119,38 +119,32 @@ resource "azurerm_linux_virtual_machine" "vm1" {
   }
 }
 data "local_file" "config_txt" {
-  filename = "config.txt"
+  filename = "${path.module}/config.txt" # Ensure the path to config.txt is correct
 }
+
 resource "null_resource" "run_jdiscordbot" {
-  # Trigger re-provisioning if the script changes or on other relevant changes
-  triggers = {
-    always_run = "${timestamp()}"
+  depends_on = [azurerm_linux_virtual_machine.vm1] # Ensure this runs after the VM is created
+
+  provisioner "remote-exec" {
+    connection {
+      type        = "ssh"
+      user        = var.vm_admin_username
+      host        = azurerm_linux_virtual_machine.vm1.public_ip_address # Ensure dynamic IP is correctly fetched
+      private_key = file(var.ssh_key_path_priv)
+    }
+
+    inline = [
+      "${var.remove_tfjdiscord_command}", # Ensure old directories are properly cleaned up
+      "sudo add-apt-repository -y ppa:openjdk-r/ppa",
+      "sudo apt-get update",
+      "sudo apt-get install -y ${var.java_version}", # Install Java version specified in variables
+      "git clone ${var.repo_url} ${var.jdiscord_path}", # Clone into the specified directory
+      "cat <<EOF > ${var.jdiscord_path}/config.txt", # Write config.txt contents
+      "${data.local_file.config_txt.content}",
+      "EOF",
+      "cd ${var.jdiscord_path}",
+      "nohup sudo java -jar ${var.jdiscord_path}${var.jar_path} &", # Start the bot in the background
+      "sleep 10"
+    ]
   }
-
-  connection {
-    type        = "ssh"
-    user        = var.vm_admin_username
-    private_key = file(var.ssh_key_path_priv)
-    host        = azurerm_public_ip.public_ip.ip_address
-  }
-
-
-provisioner "remote-exec" {
-  inline = [
-    "sleep 20",
-    "sudo apt-get update",
-    "sudo apt-get install -y git",
-    # Ensure the directory exists for the script; clear it if needed
-    "sudo rm -rf /home/rc/tf-jdiscord || true",
-    "sudo mkdir -p /home/rc/tf-jdiscord",
-    # Navigate to the directory
-    "cd /home/rc/tf-jdiscord",
-    # Download the setup script from Git
-    "sudo git clone ${var.repo_url} .",
-    # Assuming the setup_discord_bot.sh is at the root of the repo
-    "sudo chmod +x setup_discord_bot.sh",
-    "sudo ./setup_discord_bot.sh"
-  ]
-}
-
 }

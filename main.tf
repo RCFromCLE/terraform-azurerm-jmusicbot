@@ -123,28 +123,37 @@ data "local_file" "config_txt" {
 }
 
 resource "null_resource" "run_jdiscordbot" {
-  depends_on = [azurerm_linux_virtual_machine.vm1] # Ensure this runs after the VM is created
-
   provisioner "remote-exec" {
     connection {
       type        = "ssh"
       user        = var.vm_admin_username
-      host        = azurerm_linux_virtual_machine.vm1.public_ip_address # Ensure dynamic IP is correctly fetched
+      host        = azurerm_linux_virtual_machine.vm1.public_ip_address
       private_key = file(var.ssh_key_path_priv)
     }
-
     inline = [
-      "${var.remove_tfjdiscord_command}", # Ensure old directories are properly cleaned up
-      "sudo add-apt-repository -y ppa:openjdk-r/ppa",
-      "sudo apt-get update",
-      "sudo apt-get install -y ${var.java_version}", # Install Java version specified in variables
-      "git clone ${var.repo_url} ${var.jdiscord_path}", # Clone into the specified directory
-      "cat <<EOF > ${var.jdiscord_path}/config.txt", # Write config.txt contents
-      "${data.local_file.config_txt.content}",
-      "EOF",
-      "cd ${var.jdiscord_path}",
-      "nohup sudo java -jar ${var.jdiscord_path}${var.jar_path} &", # Start the bot in the background
-      "sleep 10"
+      # Create a startup script
+      "echo '#!/bin/bash' > /home/${var.vm_admin_username}/startup.sh",
+      "echo '${var.remove_tfjdiscord_command}' >> /home/${var.vm_admin_username}/startup.sh",
+      "echo 'sudo add-apt-repository -y ppa:openjdk-r/ppa' >> /home/${var.vm_admin_username}/startup.sh",
+      "echo 'sudo apt-get update' >> /home/${var.vm_admin_username}/startup.sh",
+      "echo 'sudo apt-get install -y ${var.java_version}' >> /home/${var.vm_admin_username}/startup.sh",
+      "echo 'git clone ${var.repo_url}' >> /home/${var.vm_admin_username}/startup.sh",
+      "echo 'cat <<EOF > ${var.jdiscord_path}/config.txt' >> /home/${var.vm_admin_username}/startup.sh",
+      "echo '${data.local_file.config_txt.content}' >> /home/${var.vm_admin_username}/startup.sh",
+      "echo 'EOF' >> /home/${var.vm_admin_username}/startup.sh",
+      "echo 'cd ${var.jdiscord_path}' >> /home/${var.vm_admin_username}/startup.sh",
+      "echo 'nohup sudo java -jar ${var.jdiscord_path}${var.jar_path} &' >> /home/${var.vm_admin_username}/startup.sh",
+
+      # Make the script executable
+      "chmod +x /home/${var.vm_admin_username}/startup.sh",
+
+      # Schedule the script to run at boot
+      "(crontab -l 2>/dev/null; echo '@reboot /home/${var.vm_admin_username}/startup.sh') | crontab -",
     ]
   }
 }
+output "vm_public_ip" {
+  value       = azurerm_public_ip.public_ip.ip_address
+  description = "The public IP address of the virtual machine."
+}
+

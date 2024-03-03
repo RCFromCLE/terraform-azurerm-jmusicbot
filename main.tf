@@ -157,3 +157,60 @@ output "vm_public_ip" {
   description = "The public IP address of the virtual machine."
 }
 
+# Assuming other parts of main.tf remain unchanged
+
+# Azure Function App and related resources
+resource "azurerm_storage_account" "functionapp_sa" {
+  name                     = "jdiscord_sa_${random_string.sa_suffix.result}"
+  resource_group_name      = azurerm_resource_group.rg1.name
+  location                 = azurerm_resource_group.rg1.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+}
+
+resource "azurerm_storage_container" "functionapp_container" {
+  name                  = "jdiscord-code"
+  storage_account_name  = azurerm_storage_account.functionapp_sa.name
+  container_access_type = "private"
+}
+
+resource "azurerm_app_service_plan" "functionapp_plan" {
+  name                = "jdiscord-app-service-plan"
+  location            = azurerm_resource_group.rg1.location
+  resource_group_name = azurerm_resource_group.rg1.name
+  kind                = "FunctionApp"
+  sku {
+    tier = "Dynamic"
+    size = "Y1"
+  }
+}
+
+resource "azurerm_function_app" "jdiscord_function" {
+  name                      = "jdiscord-function"
+  location                  = azurerm_resource_group.rg1.location
+  resource_group_name       = azurerm_resource_group.rg1.name
+  app_service_plan_id       = azurerm_app_service_plan.functionapp_plan.id
+  storage_account_name      = azurerm_storage_account.functionapp_sa.name
+  storage_account_access_key = azurerm_storage_account.functionapp_sa.primary_access_key
+  os_type                  = "linux"
+  version                  = "~3"
+
+  app_settings = {
+    "DISCORD_BOT_TOKEN" = var.discord_bot_token
+    # SPN needs to be created ahead of time and given virtual machine contributor role to the resource group or virtual machine
+    "CLIENT_ID"         = var.azure_client_id
+    "CLIENT_SECRET"     = var.azure_client_secret
+    #"DOMAIN"            = var.azure_domain
+    "SUBSCRIPTION_ID"   = var.sub
+    "RESOURCE_GROUP_NAME" = azurerm_resource_group.rg1.name
+    "VM_NAME"           = azurerm_linux_virtual_machine.vm1.name
+  }
+}
+
+output "function_app_name" {
+  value = azurerm_function_app.jdiscord_function.name
+}
+
+output "function_app_default_hostname" {
+  value = azurerm_function_app.jdiscord_function.default_hostname
+}

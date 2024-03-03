@@ -181,3 +181,16 @@ variable "java_version" {
   type    = string
   default = "openjdk-8-jdk"
 }
+
+variable "discord_bot_token" {
+  type    = string
+  description = "value of the discord bot token"
+}
+
+variable azure_client_id {
+  description = "The client ID of the Service Principal."
+}
+
+variable "azure_client_secret" {
+  description = "The client secret of the Service Principal." 
+}

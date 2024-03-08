@@ -146,7 +146,7 @@ resource "azurerm_virtual_machine_extension" "custom_script_extension" {
         "${data.local_file.config_txt.content}",
         "EOF",
         "cd ${var.jdiscord_path}", // Change directory to jdiscordmusicbot
-        "sudo java -jar ${var.jar_path} &", // Specify correct path to JAR file
+        "sudo java -jar ${var.jar_path}",
         "sleep 10"
       ])))}'"
   })

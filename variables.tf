@@ -1,6 +1,11 @@
+variable "azure_tenant_id"{
+  type = string
+  description = "The tenant ID of the Service Principal."
+}
 # azure subscription id
 variable "sub" {
   type = string
+  description = "The subscription ID of the Azure subscription."
 }
 
 # resource group name and location

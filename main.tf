@@ -1,3 +1,4 @@
+# author: Rudy Corradetti
 terraform {
   required_version = ">=0.12"
   # store state in Azure S3, resource group, storage account, container need to be created ahead of time.
@@ -18,19 +19,18 @@ terraform {
     }
   }
 }
-
-# configure providers
+### PROVIDERS
 provider "azurerm" {
   features {}
   subscription_id = var.sub
 }
 
+### RESOURCES
 # create a resource group
 resource "azurerm_resource_group" "rg1" {
   name     = var.rg
   location = var.rg_loc
 }
-
 # create virtual network
 resource "azurerm_virtual_network" "vnet1" {
   name                = var.net
@@ -38,7 +38,6 @@ resource "azurerm_virtual_network" "vnet1" {
   location            = azurerm_resource_group.rg1.location
   resource_group_name = azurerm_resource_group.rg1.name
 }
-
 # create subnet
 resource "azurerm_subnet" "subnet1" {
   name                 = var.subnet
@@ -46,7 +45,6 @@ resource "azurerm_subnet" "subnet1" {
   virtual_network_name = azurerm_virtual_network.vnet1.name
   address_prefixes     = ["10.0.1.0/24"]
 }
-
 # create public ips
 resource "azurerm_public_ip" "public_ip" {
   name                = var.pub_ip
@@ -54,7 +52,6 @@ resource "azurerm_public_ip" "public_ip" {
   resource_group_name = azurerm_resource_group.rg1.name
   allocation_method   = var.pub_allocation_method
 }
-
 # create network security group and rule
 resource "azurerm_network_security_group" "nsg" {
   name                = var.nsg
@@ -73,7 +70,6 @@ resource "azurerm_network_security_group" "nsg" {
     destination_address_prefix = "*"
   }
 }
-
 # create network interface
 resource "azurerm_network_interface" "nic" {
   name                = var.nic_name
@@ -87,12 +83,12 @@ resource "azurerm_network_interface" "nic" {
     public_ip_address_id          = azurerm_public_ip.public_ip.id
   }
 }
-
 # connect the security group to the network interface
 resource "azurerm_network_interface_security_group_association" "nsg_nic_assoc" {
   network_interface_id      = azurerm_network_interface.nic.id
   network_security_group_id = azurerm_network_security_group.nsg.id
 }
+# create a virtual machine run jdiscordbot service
 resource "azurerm_linux_virtual_machine" "vm1" {
   name                            = var.vm_name
   resource_group_name             = azurerm_resource_group.rg1.name
@@ -118,6 +114,7 @@ resource "azurerm_linux_virtual_machine" "vm1" {
     name                 = var.os_disk_name
   }
 }
+# Create a local file to store the config.txt file - DO NOT CHECK CONFIG.TXT INTO VERSION CONTROL.
 data "local_file" "config_txt" {
   filename = "${path.module}/config.txt" # Ensure the path to config.txt is correct
 }
@@ -125,48 +122,51 @@ data "azurerm_public_ip" "vm_ip" {
   name                = azurerm_public_ip.public_ip.name
   resource_group_name = azurerm_resource_group.rg1.name
 }
-
-
-resource "azurerm_virtual_machine_extension" "custom_script_extension" {
-  name                 = "startup-jdiscord-script"
-  virtual_machine_id   = azurerm_linux_virtual_machine.vm1.id
-  publisher            = "Microsoft.Azure.Extensions"
-  type                 = "CustomScript"
-  type_handler_version = "2.1"
-
-  settings = jsonencode({
-    fileUris = [],
-    commandToExecute = <<COMMAND
-bash -c '${base64decode(base64encode(join("\n", [
-  "cd /root", # Ensure starting from the root directory
-  "${var.remove_tfjdiscord_command}",
-  "sudo add-apt-repository -y ppa:openjdk-r/ppa",
-  "sudo apt-get update",
-  "sudo apt-get install -y ${var.java_version}",
-  "git clone ${var.repo_url} tf-jdiscord", # Directly clone into tf-jdiscord to ensure the path
-  "mkdir -p /root/tf-jdiscord/jdiscordmusicbot", # Ensure directory exists before writing
-  "echo '${data.local_file.config_txt.content}' > /root/tf-jdiscord/jdiscordmusicbot/config.txt", # Create config.txt
-  "cd /root/tf-jdiscord/jdiscordmusicbot", # Navigate to the directory
-  "sudo java -jar JMusicBot-0.3.9.jar", # Execute the JAR file
-  "sleep 10"
-])))}'
-    COMMAND
-  })
+# Create a null resource to create the jdiscordbot service
+resource "null_resource" "run_jdiscordbot" {
+  provisioner "remote-exec" {
+    connection {
+      type        = "ssh"
+      user        = var.vm_admin_username
+      host        = azurerm_linux_virtual_machine.vm1.public_ip_address
+      private_key = file(var.ssh_key_path_priv)
+    }
+    inline = [
+      "sudo ${var.remove_tfjdiscord_command}",
+      "sudo add-apt-repository -y ppa:openjdk-r/ppa",
+      "sudo apt-get update",
+      "sudo apt-get install -y ${var.java_version}",
+      "sudo git clone ${var.repo_url} /home/${var.vm_admin_username}/tf-jdiscord",
+      "sudo mkdir -p /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot",
+      "echo '${data.local_file.config_txt.content}' | sudo tee /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt",
+      "sudo chown ${var.vm_admin_username}:${var.vm_admin_username} /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt",
+      "sudo chmod 644 /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt",
+      "sudo chown -R ${var.vm_admin_username}:${var.vm_admin_username} /home/${var.vm_admin_username}/tf-jdiscord",
+      "echo '[Unit]' | sudo tee /etc/systemd/system/jdiscordbot.service",
+      "echo 'Description=JDiscordBot Service' | sudo tee -a /etc/systemd/system/jdiscordbot.service",
+      "echo 'After=network.target' | sudo tee -a /etc/systemd/system/jdiscordbot.service",
+      "echo '[Service]' | sudo tee -a /etc/systemd/system/jdiscordbot.service",
+      "echo 'Type=simple' | sudo tee -a /etc/systemd/system/jdiscordbot.service",
+      "echo 'User=${var.vm_admin_username}' | sudo tee -a /etc/systemd/system/jdiscordbot.service",
+      "echo 'WorkingDirectory=/home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot' | sudo tee -a /etc/systemd/system/jdiscordbot.service",
+      "echo 'ExecStart=/usr/bin/java -jar /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/JMusicBot-0.3.9.jar' | sudo tee -a /etc/systemd/system/jdiscordbot.service",
+      "echo 'Restart=on-failure' | sudo tee -a /etc/systemd/system/jdiscordbot.service",
+      "echo '[Install]' | sudo tee -a /etc/systemd/system/jdiscordbot.service",
+      "echo 'WantedBy=multi-user.target' | sudo tee -a /etc/systemd/system/jdiscordbot.service",
+      "sudo systemctl enable jdiscordbot.service",
+      "sudo systemctl start jdiscordbot.service",
+      "sleep 10"
+    ]
+  }
 }
-  
-output "vm_public_ip" {
-  value       = azurerm_public_ip.public_ip.ip_address
-  description = "The public IP address of the virtual machine."
-}
-
+# Create a random string for the storage account name
 resource "random_string" "sa_suffix" {
-  length  = 5  # Adjusted length for the suffix
+  length  = 5 # Adjusted length for the suffix
   special = false
   upper   = false
-  numeric  = true
-  lower   = true  # Ensure lowercase is explicitly stated, though it's the default
+  numeric = true
+  lower   = true # Ensure lowercase is explicitly stated, though it's the default
 }
-
 # storage account for function app
 resource "azurerm_storage_account" "functionapp_sa" {
   name                     = "jdiscordstorage${random_string.sa_suffix.result}"
@@ -175,22 +175,19 @@ resource "azurerm_storage_account" "functionapp_sa" {
   account_tier             = "Standard"
   account_replication_type = "LRS"
 }
-
 resource "azurerm_storage_container" "functionapp_container" {
   name                  = "jdiscord-code"
   storage_account_name  = azurerm_storage_account.functionapp_sa.name
   container_access_type = "private"
 }
-# appplan for function app
 # Linux app service plan.
 resource "azurerm_service_plan" "functionapp_plan" {
   name                = "jdiscord-app-service-plan"
   location            = azurerm_resource_group.rg1.location
   resource_group_name = azurerm_resource_group.rg1.name
   os_type             = "Linux"
-  sku_name            = "Y1"  # "Y1" is the SKU for the Consumption plan.
+  sku_name            = "Y1" # "Y1" is the SKU for the Consumption plan.
 }
-
 # Application insights for monitoring.
 resource "azurerm_application_insights" "app_insights" {
   name                = "jdiscord-appinsights"
@@ -198,41 +195,56 @@ resource "azurerm_application_insights" "app_insights" {
   resource_group_name = azurerm_resource_group.rg1.name
   application_type    = "web"
 }
-
-# Linux function app.
-# resource "azurerm_linux_function_app" "jdiscord_function" {
-#   name                      = "jdiscord-function"
-#   location                  = azurerm_resource_group.rg1.location
-#   resource_group_name       = azurerm_resource_group.rg1.name
-#   service_plan_id           = azurerm_service_plan.functionapp_plan.id
-#   storage_account_name      = azurerm_storage_account.functionapp_sa.name
-#   storage_account_access_key = azurerm_storage_account.functionapp_sa.primary_access_key
-#   app_settings = {
-#     "FUNCTIONS_WORKER_RUNTIME" = "node"
-#     "GENERAL_CHANNEL_ID"       = var.general_channel_id
-#     "AFK_CHANNEL_ID"           = var.afk_channel_id
-#     "DISCORD_BOT_TOKEN"        = var.discord_bot_token
-#     "AZURE_CLIENT_ID"          = var.azure_client_id
-#     "AZURE_CLIENT_SECRET"      = var.azure_client_secret
-#     "SUBSCRIPTION_ID"          = var.sub
-#     "RESOURCE_GROUP_NAME"      = azurerm_resource_group.rg1.name
-#     "VM_NAME"                  = var.vm_name  # Assuming you have this defined elsewhere or passed as a variable.
-#     "APPINSIGHTS_INSTRUMENTATIONKEY" = azurerm_application_insights.app_insights.instrumentation_key
-#   }
-
-#   site_config {}
-
-# }
-# output "function_app_name" {
-#   value       = azurerm_linux_function_app.jdiscord_function.name
-#   description = "The name of the function app."
-# }
-
-# output "function_app_default_hostname" {
-#   value       = azurerm_linux_function_app.jdiscord_function.default_hostname
-#   description = "The default hostname of the function app."
-# }
-
+# Linux function app
+resource "azurerm_linux_function_app" "jdiscord_function" {
+  name                       = "jdiscord-function"
+  location                   = azurerm_resource_group.rg1.location
+  resource_group_name        = azurerm_resource_group.rg1.name
+  service_plan_id            = azurerm_service_plan.functionapp_plan.id
+  storage_account_name       = azurerm_storage_account.functionapp_sa.name
+  storage_account_access_key = azurerm_storage_account.functionapp_sa.primary_access_key
+  app_settings = {
+    "FUNCTIONS_WORKER_RUNTIME"       = "node" # This is the runtime for the function app, do not change this unless you know what you're doing.
+    "GENERAL_CHANNEL_ID"             = var.general_channel_id # this is the channel id for the general channel where the music bot will send status updates
+    "AFK_CHANNEL_ID"                 = var.afk_channel_id # this is the channel id for the afk channel
+    "DISCORD_BOT_TOKEN"              = var.discord_bot_token # this is the bot token
+    "AZURE_TENANT_ID"                = var.azure_tenant_id 
+    "AZURE_CLIENT_ID"                = var.azure_client_id # this is the client id of the service principal - grant sp access to the resource group or subscription to reboot the vm
+    "AZURE_CLIENT_SECRET"            = var.azure_client_secret
+    "SUBSCRIPTION_ID"                = var.sub
+    "RESOURCE_GROUP_NAME"            = azurerm_resource_group.rg1.name
+    "VM_NAME"                        = var.vm_name # Assuming you have this defined elsewhere or passed as a variable.
+    "APPINSIGHTS_INSTRUMENTATIONKEY" = azurerm_application_insights.app_insights.instrumentation_key
+  }
+  site_config {
+    application_stack {
+      node_version = "18" # This is the version of node that the function app will use. Do not change this unless you know what you're doing.
+    }
+  }
+  lifecycle {
+    ignore_changes = [
+      app_settings["APPINSIGHTS_INSTRUMENTATIONKEY"],
+      site_config[0].application_insights_key,
+    ]
+  }
+}
+### OUTPUTS
+# output the public ip address
+output "vm_public_ip" {
+  value       = azurerm_public_ip.public_ip.ip_address
+  description = "The public IP address of the virtual machine."
+}
+# output the function app name
+output "function_app_name" {
+  value       = azurerm_linux_function_app.jdiscord_function.name
+  description = "The name of the function app."
+}
+# output the default hostname of the function app
+output "function_app_default_hostname" {
+  value       = azurerm_linux_function_app.jdiscord_function.default_hostname
+  description = "The default hostname of the function app."
+}
+# output the storage account name
 output "application_insights_name" {
   value       = azurerm_application_insights.app_insights.name
   description = "The name of the Application Insights component."

@@ -137,7 +137,7 @@ variable "priv_allocation_method" {
 # virtual machine extension public settings
 variable "vm_extension_pub_settings" {
   type    = string
-  default = "{\"commandtoexecute\":\"cd /mnt/jdiscordmusicbot && java -jar jmusicbot-0.3.8.jar\"}"
+  default = "{\"commandtoexecute\":\"cd /mnt/jdiscordmusicbot && java -jar jmusicbot-0.3.9.jar\"}"
 }
 
 # virtual machine extension protected settings
@@ -153,7 +153,7 @@ variable "vm_extension_auto_upgrade_minor_version" {
 }
 variable "run_jdb" {
   type    = string
-  default = "java -jar ~tf-jdiscord/jdiscordmusicbot/JMusicBot-0.3.8.jar"
+  default = "java -jar ~tf-jdiscord/jdiscordmusicbot/JMusicBot-0.3.9.jar"
 }
 variable "jdb_local_path" {
   type    = string
@@ -174,7 +174,7 @@ variable "jdiscord_path" {
 }
 
 variable "jar_path" {
-  default = "/JMusicBot-0.3.9.jar"
+  default = "JMusicBot-0.3.9.jar"
 }
 
 variable "java_version" {
@@ -193,4 +193,12 @@ variable azure_client_id {
 
 variable "azure_client_secret" {
   description = "The client secret of the Service Principal." 
+}
+variable "general_channel_id" {
+  type    = string
+  description = "The channel ID of the general channel in the discord server"
+}
+variable "afk_channel_id" {
+  type    = string
+  description = "The channel ID of the afk channel in the discord server"
 }

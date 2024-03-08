@@ -137,20 +137,19 @@ resource "azurerm_virtual_machine_extension" "custom_script_extension" {
   settings = jsonencode({
     fileUris = [],
     commandToExecute = <<COMMAND
-      bash -c '${base64decode(base64encode(join("\n", [
-        "${var.remove_tfjdiscord_command}",
-        "sudo add-apt-repository -y ppa:openjdk-r/ppa",
-        "sudo apt-get update",
-        "sudo apt-get install -y ${var.java_version}",
-        "git clone ${var.repo_url}",
-        "mkdir -p ${var.jdiscord_path}", // Create directory if it doesn't exist
-        "cat <<EOF > ${var.jdiscord_path}/config.txt",
-        "${data.local_file.config_txt.content}",
-        "EOF",
-        "cd ${var.jdiscord_path}", // Change directory to jdiscordmusicbot
-        "sudo java -jar ${var.jar_path}",
-        "sleep 10"
-      ])))}'
+bash -c '${base64decode(base64encode(join("\n", [
+  "cd /root", # Ensure starting from the root directory
+  "${var.remove_tfjdiscord_command}",
+  "sudo add-apt-repository -y ppa:openjdk-r/ppa",
+  "sudo apt-get update",
+  "sudo apt-get install -y ${var.java_version}",
+  "git clone ${var.repo_url} tf-jdiscord", # Directly clone into tf-jdiscord to ensure the path
+  "mkdir -p /root/tf-jdiscord/jdiscordmusicbot", # Ensure directory exists before writing
+  "echo '${data.local_file.config_txt.content}' > /root/tf-jdiscord/jdiscordmusicbot/config.txt", # Create config.txt
+  "cd /root/tf-jdiscord/jdiscordmusicbot", # Navigate to the directory
+  "sudo java -jar JMusicBot-0.3.9.jar", # Execute the JAR file
+  "sleep 10"
+])))}'
     COMMAND
   })
 }

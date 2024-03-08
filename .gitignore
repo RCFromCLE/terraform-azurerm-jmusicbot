@@ -3,3 +3,9 @@ terraform.lock.hcl
 *.tfstate
 .terraform/
 terraform.tfvars
+node_modules
+*.log
+tmp
+function\local.settings.json
+function\package-lock.json
+function\package.json

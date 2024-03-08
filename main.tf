@@ -135,20 +135,23 @@ resource "azurerm_virtual_machine_extension" "custom_script_extension" {
   type_handler_version = "2.1"
 
   settings = jsonencode({
-    "fileUris": [],
-    "commandToExecute": "bash -c '${base64decode(base64encode(join("\n", [
+    fileUris = [],
+    commandToExecute = <<COMMAND
+      bash -c '${base64decode(base64encode(join("\n", [
         "${var.remove_tfjdiscord_command}",
         "sudo add-apt-repository -y ppa:openjdk-r/ppa",
         "sudo apt-get update",
         "sudo apt-get install -y ${var.java_version}",
         "git clone ${var.repo_url}",
+        "mkdir -p ${var.jdiscord_path}", // Create directory if it doesn't exist
         "cat <<EOF > ${var.jdiscord_path}/config.txt",
         "${data.local_file.config_txt.content}",
         "EOF",
         "cd ${var.jdiscord_path}", // Change directory to jdiscordmusicbot
         "sudo java -jar ${var.jar_path}",
         "sleep 10"
-      ])))}'"
+      ])))}'
+    COMMAND
   })
 }
   

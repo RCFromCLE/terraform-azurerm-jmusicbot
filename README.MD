@@ -1,70 +1,58 @@
-terraform-azure-jmusicbot
-========================
+# terraform-azurerm-jmusicbot v1.1.0
 
-This module installs, configures, and runs JMusicBot (https://jmusicbot.com/) on an Ubuntu 18 instance hosted in Azure cloud. Simply fill in the sub variable in the terraform.tfvars file and run a terraform init, terraform plan, terraform apply. 
+## Overview
+This Terraform module deploys a JMusicBot instance into Azure, along with an Azure Function to manage the VM's lifecycle. The VM is only active when required, reducing costs.The module also creates a systemd service for JMusicBot, allowing it to start on boot and restart on failure. The Azure Function is triggered every 5 minutes, checking the presence of users in the Discord voice channel. If no users are present, the VM is deallocated. If users are present, the VM is started. The module also includes a systemd service for JMusicBot, allowing it to start on boot and restart on failure. 
 
+## Features
+- Automated VM Management via Azure Function.
+- Linux systemd service creation for JMusicBot.
+- VM is only active when required, reducing costs.
+- Discord bot activity monitoring.
 
+## Requirements
+- An Azure subscription.
+- An Azure Service Principal with the VM Contributor role at relevant subscription or resource group scope.
+- Terraform 0.12 or newer.
+- An existing Discord bot token.
+- Discord channel IDs for activity monitoring.
 
-Requirements
-------------
+## Usage
+Include this module in your existing Terraform configuration to deploy JMusicBot into Azure:
 
--   A valid Azure subscription
--   Terraform 0.12 or later
--   Discord API token from your server. https://jmusicbot.com/adding-your-bot/
--   Azure S3 resources need to be precreated
+```hcl
+module "jmusicbot" {
+  source  = "path/to/terraform-azurerm-jmusicbot"
 
-Providers
+  azure_tenant_id    = "your-tenant-id"
+  sub                = "your-subscription-id"
+  discord_bot_token  = "your-discord-bot-token"
+  general_channel_id = "your-general-channel-id"
+  afk_channel_id     = "your-afk-channel-id"
+  azure_client_id    = "your-service-principal-client-id"
+  azure_client_secret = "your-service-principal-client-secret"
+}
+```
+
+Variables
 ---------
 
--   azurerm
--   tls
--   random
--   null
--   local
-
-Inputs
-------
-
-| Name | Description | Type | Default | Required |
-| --- | --- | --- | --- | --- |
-| pub_allocation_method | The method to allocate public IP address | string | "Dynamic" | no |
-| priv_allocation_method | The method to allocate private IP address | string | "Dynamic" | no |
-| sub | Azure subscription ID | string | n/a | yes |
-| rg | Name of the resource group | string | n/a | yes |
-| rg_loc | Location of the resource group | string | n/a | yes |
-| net | Name of the virtual network | string | n/a | yes |
-| subnet | Name of the subnet | string | n/a | yes |
-| pub_ip | Name of the public IP | string | n/a | yes |
-| nsg | Name of the network security group | string | n/a | yes |
-| nic_name | Name of the network interface | string | n/a | yes |
-| nic_priv_ip_name | Name of the private IP for the network interface | string | n/a | yes |
-| vm_name | Name of the virtual machine | string | n/a | yes |
-| vm_size | Size of the virtual machine | string | "Standard_B1s" | no |
-| vm_image_publisher | Publisher of the virtual machine image | string | "Canonical" | no |
-| vm_image_offer | Offer of the virtual machine image | string | "UbuntuServer" | no |
-| vm_image_sku | SKU of the virtual machine image | string | "18.04-LTS" | no |
-| vm_os_disk_name | Name of the OS disk for the virtual machine | string | n/a | yes |
-| vm_os_disk_caching | Caching behavior of the OS disk | string | "ReadWrite" | no |
-| vm_os_disk_create_option | Create option for the OS disk | string | "FromImage" | no |
+-   `azure_tenant_id`: The tenant ID for your Azure Service Principal.
+-   `sub`: Your Azure subscription ID.
+-   `rg`, `rg_loc`: Resource group name and location for your resources.
+-   `net`, `subnet`, `pub_ip`, `nic_name`, `nsg`: Networking resource names.
+-   `vm_name`, `vm_size`: Virtual machine name and size specifications.
+-   `ssh_key_path_pub`, `ssh_key_path_priv`: SSH key paths for VM access.
+-   `vm_image_publisher`, `vm_image_offer`, `vm_image_sku`, `vm_image_version`: VM image specifications.
+-   `os_disk_name`, `disk_size`, `iops`, `mbps`: OS disk specifications.
+-   `vm_admin_username`: Admin username for the VM.
+-   `pub_allocation_method`, `priv_allocation_method`: IP allocation methods.
+-   `discord_bot_token`: Your Discord bot token.
+-   `azure_client_id`, `azure_client_secret`: Azure Service Principal credentials.
+-   `general_channel_id`, `afk_channel_id`: Discord channel IDs for activity monitoring.
 
 Outputs
 -------
 
-| Name | Description |
-| --- | --- |
-| public_ip_address | The public IP address of the virtual machine |
-| private_ip_address | The private IP address of the virtual machine |
-| network_interface_id | The ID of the network interface |
-
-Usage
------
-
-To use this module, add the following block to your Terraform configuration:
-
-```
-module "jdiscord" {
-  source = "git::https://github.com/RCFromCLE/tf-jdiscord.git"
-
-  sub               = var.sub
-
-```
+-   `vm_public_ip`: The public IP address of the deployed VM.
+-   `function_app_name`: The name of the deployed Azure Function.
+-   `function_app_default_hostname`: The default hostname for the function app.

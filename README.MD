@@ -1,6 +1,5 @@
-# terraform-azurerm-jmusicbot v1.1.0
+# terraform-azurerm-jmusicbot
 
-## Overview
 This Terraform module deploys a JMusicBot instance into Azure, along with an Azure Function to manage the VM's lifecycle. The VM is only active when required, reducing costs.The module also creates a systemd service for JMusicBot, allowing it to start on boot and restart on failure. The Azure Function is triggered every 5 minutes, checking the presence of users in the Discord voice channel. If no users are present, the VM is deallocated. If users are present, the VM is started. The module also includes a systemd service for JMusicBot, allowing it to start on boot and restart on failure. 
 
 ## Features

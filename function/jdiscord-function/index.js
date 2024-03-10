@@ -10,7 +10,7 @@ module.exports = async function (context, myTimer) {
     dotenv.config();
 
     // Initialize Discord client with specific intents
-    const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
+    const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_VOICE_STATES] });
 
     try {
         await new Promise((resolve, reject) => {
@@ -52,8 +52,12 @@ module.exports = async function (context, myTimer) {
                     // Check the current state of the VM
                     const vmOnline = await getVMState(computeClient, resourceGroupName, vmName);
 
-                    // Logic to start or stop VM based on voice channel occupancy
-                    if (totalUsers > 0 && !vmOnline) {
+                    // Adjusted logic to avoid starting an already running VM
+                    if (totalUsers > 0 && vmOnline) {
+                        context.log("VM is already running and users are detected in voice channels. No further actions needed.");
+                        const channel = await client.channels.fetch(generalChannelId);
+                       // await channel.send('VM is already up and running. Enjoy your time!');
+                    } else if (totalUsers > 0 && !vmOnline) {
                         context.log("Users detected in voice channels, starting VM...");
                         await manageVM('start', computeClient, resourceGroupName, vmName);
                         const channel = await client.channels.fetch(generalChannelId);
@@ -63,7 +67,6 @@ module.exports = async function (context, myTimer) {
                         await manageVM('stop', computeClient, resourceGroupName, vmName);
                         const channel = await client.channels.fetch(generalChannelId);
                         await channel.send('All quiet on the voice channels. The music bot is taking a break!');
-                        client.destroy(); // Terminate the Discord client instance if no users are in voice channels
                     }
 
                     resolve();

@@ -204,11 +204,12 @@ resource "azurerm_linux_function_app" "jdiscord_function" {
   storage_account_name       = azurerm_storage_account.functionapp_sa.name
   storage_account_access_key = azurerm_storage_account.functionapp_sa.primary_access_key
   app_settings = {
-    "FUNCTIONS_WORKER_RUNTIME"       = "node" # This is the runtime for the function app, do not change this unless you know what you're doing.
+    "FUNCTIONS_WORKER_RUNTIME"       = "node"                 # This is the runtime for the function app, do not change this unless you know what you're doing.
     "GENERAL_CHANNEL_ID"             = var.general_channel_id # this is the channel id for the general channel where the music bot will send status updates
-    "AFK_CHANNEL_ID"                 = var.afk_channel_id # this is the channel id for the afk channel
-    "DISCORD_BOT_TOKEN"              = var.discord_bot_token # this is the bot token
-    "AZURE_TENANT_ID"                = var.azure_tenant_id 
+    "AFK_CHANNEL_ID"                 = var.afk_channel_id     # this is the channel id for the afk channel
+    "MUSIC_CHANNEL_ID"               = var.music_channel_id   # this is the channel id for the music bot channel
+    "DISCORD_BOT_TOKEN"              = var.discord_bot_token  # this is the bot token
+    "AZURE_TENANT_ID"                = var.azure_tenant_id
     "AZURE_CLIENT_ID"                = var.azure_client_id # this is the client id of the service principal - grant sp access to the resource group or subscription to reboot the vm
     "AZURE_CLIENT_SECRET"            = var.azure_client_secret
     "SUBSCRIPTION_ID"                = var.sub

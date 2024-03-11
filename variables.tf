@@ -207,3 +207,7 @@ variable "afk_channel_id" {
   type    = string
   description = "The channel ID of the afk channel in the discord server"
 }
+variable "music_channel_id" {
+  type    = string
+  description = "The channel ID of the music channel in the discord server"
+}

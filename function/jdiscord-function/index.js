@@ -14,7 +14,6 @@ module.exports = async function (context, myTimer) {
 
     try {
         await new Promise((resolve, reject) => {
-            // Once the client is ready, execute the following
             client.once('ready', async () => {
                 try {
                     context.log(`Logged in as ${client.user.tag}!`);
@@ -25,6 +24,7 @@ module.exports = async function (context, myTimer) {
                     const vmName = process.env.VM_NAME;
                     const generalChannelId = process.env.GENERAL_CHANNEL_ID;
                     const afkChannelId = process.env.AFK_CHANNEL_ID;
+                    const musicChannelId = process.env.MUSIC_CHANNEL_ID; // Add MUSIC_CHANNEL_ID to your .env
 
                     // Get the first guild (server) the bot is connected to
                     const guild = client.guilds.cache.first();
@@ -34,10 +34,20 @@ module.exports = async function (context, myTimer) {
 
                     context.log(`Bot connected to guild: ${guild.name}`);
 
-                    // Filter out voice channels and count users, excluding AFK channel
+                    // Filter out voice channels and count users, excluding AFK and non-music channels
                     const voiceChannels = guild.channels.cache.filter(c => c.type === 'GUILD_VOICE' && c.id !== afkChannelId);
                     let totalUsers = 0;
-                    voiceChannels.forEach(channel => totalUsers += channel.members.size);
+                    let musicChannelActive = false;
+
+                    voiceChannels.forEach(channel => {
+                        if (channel.id === musicChannelId) {
+                            if (channel.members.size > 0) {
+                                musicChannelActive = true;
+                            }
+                        }
+                        totalUsers += channel.members.size;
+                    });
+
                     context.log(`Total voice channel users (excluding AFK): ${totalUsers}`);
 
                     // Create a credential object for Azure SDK
@@ -52,21 +62,40 @@ module.exports = async function (context, myTimer) {
                     // Check the current state of the VM
                     const vmOnline = await getVMState(computeClient, resourceGroupName, vmName);
 
-                    // Adjusted logic to avoid starting an already running VM
-                    if (totalUsers > 0 && vmOnline) {
-                        context.log("VM is already running and users are detected in voice channels. No further actions needed.");
-                        const channel = await client.channels.fetch(generalChannelId);
-                       // await channel.send('VM is already up and running. Enjoy your time!');
-                    } else if (totalUsers > 0 && !vmOnline) {
-                        context.log("Users detected in voice channels, starting VM...");
+                    const generalChannel = await client.channels.fetch(generalChannelId);
+
+                    // Logic for starting/stopping the VM based on the music channel activity or command
+                    if (musicChannelActive && !vmOnline) {
+                        context.log("Users detected in the music channel, starting VM...");
                         await manageVM('start', computeClient, resourceGroupName, vmName);
-                        const channel = await client.channels.fetch(generalChannelId);
-                        await channel.send('The music bot is spinning up! Get ready to jam!');
+                        await generalChannel.send('The band is hitting the stage! 🎸 Tune in to the music channel!');
                     } else if (totalUsers === 0 && vmOnline) {
                         context.log("No users detected in voice channels, stopping VM...");
                         await manageVM('stop', computeClient, resourceGroupName, vmName);
-                        const channel = await client.channels.fetch(generalChannelId);
-                        await channel.send('All quiet on the voice channels. The music bot is taking a break!');
+                        await generalChannel.send('The concert’s over folks, the music bot is taking a bow! 🎤');
+                    }
+
+                    // Check if there are users in any voice channel but not for music and VM is not online
+                    if (totalUsers > 0 && !vmOnline) {
+                        const messages = await generalChannel.messages.fetch({ limit: 10 });
+                        const commandMessage = messages.find(msg => msg.content.toLowerCase() === 'start music bot' && Date.now() - msg.createdTimestamp < 300000);
+
+                        if (!commandMessage) {
+                            context.log("No 'start music bot' command detected and users present in voice channel but not for music, taking no action...");
+                            // await generalChannel.send("No 'start command' detected and no users in the music bot channel, no actions taken.");
+                        }
+                    }
+
+                    // Responding to the "start music bot" command in the general channel
+                    if (!vmOnline) {
+                        const messages = await generalChannel.messages.fetch({ limit: 10 });
+                        const commandMessage = messages.find(msg => msg.content.toLowerCase() === 'start music bot' && Date.now() - msg.createdTimestamp < 300000);
+
+                        if (commandMessage) {
+                            context.log("Start music bot command detected, starting VM...");
+                            await manageVM('start', computeClient, resourceGroupName, vmName);
+                            await generalChannel.send("Summoned through the mystical arts of chat, I awaken! 🧙‍♂️🎵");
+                        }
                     }
 
                     resolve();
@@ -93,8 +122,7 @@ module.exports = async function (context, myTimer) {
 // Function to get the current power state of the Azure VM
 async function getVMState(computeClient, resourceGroupName, vmName) {
     const vm = await computeClient.virtualMachines.get(resourceGroupName, vmName, { expand: 'instanceView' });
-    const powerState = vm.instanceView.statuses.find(status => status.code.startsWith('PowerState/')).code;
-    return powerState.endsWith('running');
+    return vm.instanceView.statuses.find(status => status.code.startsWith('PowerState/')).code.endsWith('running');
 }
 
 // Function to start or stop the Azure VM based on the action parameter

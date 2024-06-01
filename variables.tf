@@ -142,7 +142,7 @@ variable "priv_allocation_method" {
 # virtual machine extension public settings
 variable "vm_extension_pub_settings" {
   type    = string
-  default = "{\"commandtoexecute\":\"cd /mnt/jdiscordmusicbot && java -jar jmusicbot-0.3.9.jar\"}"
+  default = "{\"commandtoexecute\":\"cd /mnt/jdiscordmusicbot && java -jar JMusicBot-0.4.1.jar\"}"
 }
 
 # virtual machine extension protected settings
@@ -156,14 +156,14 @@ variable "vm_extension_auto_upgrade_minor_version" {
   type    = bool
   default = true
 }
-variable "run_jdb" {
-  type    = string
-  default = "java -jar ~tf-jdiscord/jdiscordmusicbot/JMusicBot-0.3.9.jar"
-}
-variable "jdb_local_path" {
-  type    = string
-  default = "jdiscordmusicbot"
-}
+# variable "run_jdb" {
+#   type    = string
+#   default = "java -jar ~tf-jdiscord/jdiscordmusicbot/JMusicBot-0.4.1.jar"
+# }
+# variable "jdb_local_path" {
+#   type    = string
+#   default = "jdiscordmusicbot"
+# }
 
 variable "remove_tfjdiscord_command" {
   default = "[ -d \"tf-jdiscord\" ] && rm -rf tf-jdiscord"
@@ -174,12 +174,12 @@ variable "repo_url" {
 }
 
 
-variable "jdiscord_path" {
-  default = "~/tf-jdiscord/jdiscordmusicbot"
-}
+# variable "jdiscord_path" {
+#   default = "~/tf-jdiscord/jdiscordmusicbot"
+# }
 
 variable "jar_path" {
-  default = "JMusicBot-0.3.9.jar"
+  default = "JMusicBot-0.4.1.jar"
 }
 
 variable "java_version" {

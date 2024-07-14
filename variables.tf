@@ -1,213 +1,219 @@
-variable "azure_tenant_id"{
-  type = string
+variable "azure_tenant_id" {
+  type        = string
   description = "The tenant ID of the Service Principal."
 }
-# azure subscription id
+
 variable "sub" {
-  type = string
+  type        = string
   description = "The subscription ID of the Azure subscription."
 }
 
-# resource group name and location
 variable "rg" {
-  type    = string
-  default = "jdiscordbot-rg"
+  type        = string
+  description = "The name of the resource group."
+  default     = "jdiscordbot-rg"
 }
 
 variable "rg_loc" {
-  type    = string
-  default = "eastus"
+  type        = string
+  description = "The location of the resource group."
+  default     = "eastus"
 }
 
-# virtual network name
 variable "net" {
-  type    = string
-  default = "jdiscordbot-vnet"
+  type        = string
+  description = "The name of the virtual network."
+  default     = "jdiscordbot-vnet"
 }
 
-# subnet name
 variable "subnet" {
-  type    = string
-  default = "jdiscordbot-snet"
+  type        = string
+  description = "The name of the subnet."
+  default     = "jdiscordbot-snet"
 }
 
-# public ip name
 variable "pub_ip" {
-  type    = string
-  default = "jdb-pub_ip"
+  type        = string
+  description = "The name of the public IP."
+  default     = "jdb-pub_ip"
 }
 
-# network interface name
 variable "nic_name" {
-  type    = string
-  default = "jdb-nic"
+  type        = string
+  description = "The name of the network interface."
+  default     = "jdb-nic"
 }
 
-# private ip configuration name
 variable "nic_priv_ip_name" {
-  type    = string
-  default = "jdb-priv_ip-config"
+  type        = string
+  description = "The name of the private IP configuration."
+  default     = "jdb-priv_ip-config"
 }
 
-# name of network security group
 variable "nsg" {
-  type    = string
-  default = "jdb-nsg"
+  type        = string
+  description = "The name of the network security group."
+  default     = "jdb-nsg"
 }
-# vm name and size
+
 variable "vm_name" {
-  type    = string
-  default = "jdb-vm"
+  type        = string
+  description = "The name of the virtual machine."
+  default     = "jdb-vm"
 }
 
 variable "vm_size" {
-  type    = string
-  default = "Standard_B1ms"
+  type        = string
+  description = "The size of the virtual machine."
+  default     = "Standard_B1ms"
 }
 
-# ssh key path
 variable "ssh_key_path_pub" {
-  type    = string
-  default = "~/.ssh/id_rsa.pub"
+  type        = string
+  description = "The path to the public SSH key."
+  default     = "~/.ssh/id_rsa.pub"
 }
-variable "ssh_key_path_priv" {
-  type    = string
-  default = "~/.ssh/id_rsa"
 
+variable "ssh_key_path_priv" {
+  type        = string
+  description = "The path to the private SSH key."
+  default     = "~/.ssh/id_rsa"
 }
-# vm image publisher, offer, sku, and version
+
 variable "vm_image_publisher" {
-  type    = string
-  default = "canonical"
+  type        = string
+  description = "The publisher of the VM image."
+  default     = "canonical"
 }
 
 variable "vm_image_offer" {
-  type    = string
-  default = "ubuntuserver"
+  type        = string
+  description = "The offer of the VM image."
+  default     = "ubuntuserver"
 }
 
 variable "vm_image_sku" {
-  type    = string
-  default = "18_04-lts-gen2"
+  type        = string
+  description = "The SKU of the VM image."
+  default     = "18_04-lts-gen2"
 }
 
 variable "vm_image_version" {
-  type    = string
-  default = "18.04.202103250"
+  type        = string
+  description = "The version of the VM image."
+  default     = "18.04.202103250"
 }
 
-# os disk name
 variable "os_disk_name" {
-  type    = string
-  default = "os-disk"
-
+  type        = string
+  description = "The name of the OS disk."
+  default     = "os-disk"
 }
 
-# disk size
 variable "disk_size" {
-  type    = string
-  default = "50"
+  type        = string
+  description = "The size of the disk in GB."
+  default     = "50"
 }
 
-# iops
 variable "iops" {
-  type    = number
-  default = 1000
+  type        = number
+  description = "The number of IOPS."
+  default     = 1000
 }
 
-# mbps
 variable "mbps" {
-  type    = number
-  default = 100
+  type        = number
+  description = "The throughput in MB per second."
+  default     = 100
 }
 
-# vm admin username
 variable "vm_admin_username" {
-  type    = string
-  default = "rc"
+  type        = string
+  description = "The admin username for the VM."
+  default     = "rc"
 }
 
-# public ip allocation method
 variable "pub_allocation_method" {
-  type    = string
-  default = "Dynamic"
+  type        = string
+  description = "The allocation method for the public IP."
+  default     = "Dynamic"
 }
 
-# private ip allocation method
 variable "priv_allocation_method" {
-  type    = string
-  default = "Dynamic"
+  type        = string
+  description = "The allocation method for the private IP."
+  default     = "Dynamic"
 }
 
-# virtual machine extension public settings
 variable "vm_extension_pub_settings" {
-  type    = string
-  default = "{\"commandtoexecute\":\"cd /mnt/jdiscordmusicbot && java -jar JMusicBot-0.4.1.jar\"}"
+  type        = string
+  description = "The public settings for the VM extension."
+  default     = "{\"commandtoexecute\":\"cd /mnt/jdiscordmusicbot && java -jar JMusicBot-0.4.1.jar\"}"
 }
 
-# virtual machine extension protected settings
 variable "vm_extension_prot_settings" {
-  type    = string
-  default = "{}"
+  type        = string
+  description = "The protected settings for the VM extension."
+  default     = "{}"
 }
 
-# virtual machine extension auto upgrade minor version
 variable "vm_extension_auto_upgrade_minor_version" {
-  type    = bool
-  default = true
+  type        = bool
+  description = "Whether to auto-upgrade minor versions of the VM extension."
+  default     = true
 }
-# variable "run_jdb" {
-#   type    = string
-#   default = "java -jar ~tf-jdiscord/jdiscordmusicbot/JMusicBot-0.4.1.jar"
-# }
-# variable "jdb_local_path" {
-#   type    = string
-#   default = "jdiscordmusicbot"
-# }
 
 variable "remove_tfjdiscord_command" {
-  default = "[ -d \"tf-jdiscord\" ] && rm -rf tf-jdiscord"
+  type        = string
+  description = "The command to remove the tf-jdiscord directory."
+  default     = "[ -d \"tf-jdiscord\" ] && rm -rf tf-jdiscord"
 }
 
 variable "repo_url" {
-  default = "https://github.com/RCFromCLE/tf-jdiscord.git"
+  type        = string
+  description = "The URL of the GitHub repository."
+  default     = "https://github.com/RCFromCLE/tf-jdiscord.git"
 }
 
-
-# variable "jdiscord_path" {
-#   default = "~/tf-jdiscord/jdiscordmusicbot"
-# }
-
 variable "jar_path" {
-  default = "JMusicBot-0.4.1.jar"
+  type        = string
+  description = "The path to the JMusicBot JAR file."
+  default     = "JMusicBot-0.4.1.jar"
 }
 
 variable "java_version" {
-  type    = string
-  default = "openjdk-8-jdk"
+  type        = string
+  description = "The version of Java to install."
+  default     = "openjdk-8-jdk"
 }
 
 variable "discord_bot_token" {
-  type    = string
-  description = "value of the discord bot token"
+  type        = string
+  description = "The Discord bot token."
 }
 
-variable azure_client_id {
+variable "azure_client_id" {
+  type        = string
   description = "The client ID of the Service Principal."
 }
 
 variable "azure_client_secret" {
-  description = "The client secret of the Service Principal." 
+  type        = string
+  description = "The client secret of the Service Principal."
 }
+
 variable "general_channel_id" {
-  type    = string
-  description = "The channel ID of the general channel in the discord server"
+  type        = string
+  description = "The channel ID of the general channel in the Discord server."
 }
+
 variable "afk_channel_id" {
-  type    = string
-  description = "The channel ID of the afk channel in the discord server"
+  type        = string
+  description = "The channel ID of the AFK channel in the Discord server."
 }
+
 variable "music_channel_id" {
-  type    = string
-  description = "The channel ID of the music channel in the discord server"
+  type        = string
+  description = "The channel ID of the music channel in the Discord server."
 }

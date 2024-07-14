@@ -1,13 +1,7 @@
 # author: Rudy Corradetti
+############################################ terraform and provider blocks ############################################
 terraform {
   required_version = ">=0.12"
-  # store state in Azure S3, resource group, storage account, container need to be created ahead of time.
-  backend "azurerm" {
-    resource_group_name  = "tfstaterg01"
-    storage_account_name = "tfstate011503435350"
-    container_name       = "jdb-tf-state"
-    key                  = "terraform.tfstate"
-  }
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
@@ -19,13 +13,11 @@ terraform {
     }
   }
 }
-### PROVIDERS
 provider "azurerm" {
   features {}
   subscription_id = var.sub
 }
-
-### RESOURCES
+############################################ resource blocks ############################################
 # create a resource group
 resource "azurerm_resource_group" "rg1" {
   name     = var.rg
@@ -229,7 +221,7 @@ resource "azurerm_linux_function_app" "jdiscord_function" {
     ]
   }
 }
-### OUTPUTS
+############################################ output blocks ############################################
 # output the public ip address
 output "vm_public_ip" {
   value       = azurerm_public_ip.public_ip.ip_address

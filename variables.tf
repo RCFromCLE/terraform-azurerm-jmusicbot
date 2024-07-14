@@ -68,16 +68,15 @@ variable "vm_size" {
   default     = "Standard_B1ms"
 }
 
-variable "ssh_key_path_pub" {
+variable "ssh_public_key" {
   type        = string
-  description = "The path to the public SSH key."
-  default     = "~/.ssh/id_rsa.pub"
+  description = "The public SSH key for VM access."
 }
 
-variable "ssh_key_path_priv" {
+variable "ssh_private_key" {
   type        = string
-  description = "The path to the private SSH key."
-  default     = "~/.ssh/id_rsa"
+  description = "The private SSH key for VM access."
+  sensitive   = true
 }
 
 variable "vm_image_publisher" {
@@ -110,24 +109,6 @@ variable "os_disk_name" {
   default     = "os-disk"
 }
 
-variable "disk_size" {
-  type        = string
-  description = "The size of the disk in GB."
-  default     = "50"
-}
-
-variable "iops" {
-  type        = number
-  description = "The number of IOPS."
-  default     = 1000
-}
-
-variable "mbps" {
-  type        = number
-  description = "The throughput in MB per second."
-  default     = 100
-}
-
 variable "vm_admin_username" {
   type        = string
   description = "The admin username for the VM."
@@ -144,24 +125,6 @@ variable "priv_allocation_method" {
   type        = string
   description = "The allocation method for the private IP."
   default     = "Dynamic"
-}
-
-variable "vm_extension_pub_settings" {
-  type        = string
-  description = "The public settings for the VM extension."
-  default     = "{\"commandtoexecute\":\"cd /mnt/jdiscordmusicbot && java -jar JMusicBot-0.4.1.jar\"}"
-}
-
-variable "vm_extension_prot_settings" {
-  type        = string
-  description = "The protected settings for the VM extension."
-  default     = "{}"
-}
-
-variable "vm_extension_auto_upgrade_minor_version" {
-  type        = bool
-  description = "Whether to auto-upgrade minor versions of the VM extension."
-  default     = true
 }
 
 variable "remove_tfjdiscord_command" {
@@ -182,15 +145,10 @@ variable "jar_path" {
   default     = "JMusicBot-0.4.1.jar"
 }
 
-variable "java_version" {
-  type        = string
-  description = "The version of Java to install."
-  default     = "openjdk-8-jdk"
-}
-
 variable "discord_bot_token" {
   type        = string
   description = "The Discord bot token."
+  sensitive   = true
 }
 
 variable "azure_client_id" {
@@ -201,6 +159,7 @@ variable "azure_client_id" {
 variable "azure_client_secret" {
   type        = string
   description = "The client secret of the Service Principal."
+  sensitive   = true
 }
 
 variable "general_channel_id" {
@@ -216,4 +175,15 @@ variable "afk_channel_id" {
 variable "music_channel_id" {
   type        = string
   description = "The channel ID of the music channel in the Discord server."
+}
+
+variable "discord_bot_owner" {
+  type        = string
+  description = "The owner ID for the Discord bot"
+}
+
+variable "discord_bot_prefix" {
+  type        = string
+  description = "The command prefix for the Discord bot"
+  default     = "!"
 }

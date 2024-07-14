@@ -92,7 +92,7 @@ resource "azurerm_linux_virtual_machine" "vm1" {
 
   admin_ssh_key {
     username   = var.vm_admin_username
-    public_key = file(var.ssh_key_path_pub)
+    public_key = var.ssh_public_key
   }
   source_image_reference {
     publisher = var.vm_image_publisher
@@ -106,10 +106,6 @@ resource "azurerm_linux_virtual_machine" "vm1" {
     name                 = var.os_disk_name
   }
 }
-# Create a local file to store the config.txt file - DO NOT CHECK CONFIG.TXT INTO VERSION CONTROL.
-data "local_file" "config_txt" {
-  filename = "${path.module}/config.txt" # Ensure the path to config.txt is correct
-}
 data "azurerm_public_ip" "vm_ip" {
   name                = azurerm_public_ip.public_ip.name
   resource_group_name = azurerm_resource_group.rg1.name
@@ -121,7 +117,7 @@ resource "null_resource" "run_jdiscordbot" {
       type        = "ssh"
       user        = var.vm_admin_username
       host        = azurerm_linux_virtual_machine.vm1.public_ip_address
-      private_key = file(var.ssh_key_path_priv)
+      private_key = var.ssh_private_key
     }
     inline = [
       "sudo ${var.remove_tfjdiscord_command}",
@@ -130,7 +126,9 @@ resource "null_resource" "run_jdiscordbot" {
       "sudo apt-get install -y default-jdk",
       "sudo git clone ${var.repo_url} /home/${var.vm_admin_username}/tf-jdiscord",
       "sudo mkdir -p /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot",
-      "echo '${data.local_file.config_txt.content}' | sudo tee /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt",
+      "echo 'token = ${var.discord_bot_token}' | sudo tee /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt",
+      "echo 'owner = ${var.discord_bot_owner}' | sudo tee -a /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt",
+      "echo 'prefix = ${var.discord_bot_prefix}' | sudo tee -a /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt",
       "sudo chown ${var.vm_admin_username}:${var.vm_admin_username} /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt",
       "sudo chmod 644 /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt",
       "sudo chown -R ${var.vm_admin_username}:${var.vm_admin_username} /home/${var.vm_admin_username}/tf-jdiscord",
@@ -220,25 +218,4 @@ resource "azurerm_linux_function_app" "jdiscord_function" {
       site_config[0].application_insights_key,
     ]
   }
-}
-############################################ output blocks ############################################
-# output the public ip address
-output "vm_public_ip" {
-  value       = azurerm_public_ip.public_ip.ip_address
-  description = "The public IP address of the virtual machine."
-}
-# output the function app name
-output "function_app_name" {
-  value       = azurerm_linux_function_app.jdiscord_function.name
-  description = "The name of the function app."
-}
-# output the default hostname of the function app
-output "function_app_default_hostname" {
-  value       = azurerm_linux_function_app.jdiscord_function.default_hostname
-  description = "The default hostname of the function app."
-}
-# output the storage account name
-output "application_insights_name" {
-  value       = azurerm_application_insights.app_insights.name
-  description = "The name of the Application Insights component."
 }

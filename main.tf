@@ -124,9 +124,9 @@ resource "azurerm_linux_virtual_machine" "vm1" {
   }
 }
 # Create a local file to store the config.txt file - DO NOT CHECK CONFIG.TXT INTO VERSION CONTROL.
-data "local_file" "config_txt" {
-  filename = "${path.module}/config.txt" # Ensure the path to config.txt is correct
-}
+# data "local_file" "config_txt" {
+#   filename = "${path.module}/config.txt" # Ensure the path to config.txt is correct
+# }
 data "azurerm_public_ip" "vm_ip" {
   name                = azurerm_public_ip.public_ip.name
   resource_group_name = azurerm_resource_group.rg1.name

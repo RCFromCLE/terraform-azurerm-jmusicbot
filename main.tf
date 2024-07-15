@@ -123,6 +123,10 @@ resource "azurerm_linux_virtual_machine" "vm1" {
     name                 = var.os_disk_name
   }
 }
+# Create a local file to store the config.txt file - DO NOT CHECK CONFIG.TXT INTO VERSION CONTROL.
+data "local_file" "config_txt" {
+  filename = "${path.module}/config.txt" # Ensure the path to config.txt is correct
+}
 data "azurerm_public_ip" "vm_ip" {
   name                = azurerm_public_ip.public_ip.name
   resource_group_name = azurerm_resource_group.rg1.name
@@ -143,9 +147,7 @@ resource "null_resource" "run_jdiscordbot" {
       "sudo apt-get install -y default-jdk",
       "sudo git clone ${var.repo_url} /home/${var.vm_admin_username}/tf-jdiscord",
       "sudo mkdir -p /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot",
-      "echo 'token = ${var.discord_bot_token}' | sudo tee /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt",
-      "echo 'owner = ${var.discord_bot_owner}' | sudo tee -a /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt",
-      "echo 'prefix = ${var.discord_bot_prefix}' | sudo tee -a /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt",
+      "echo '${data.local_file.config_txt.content}' | sudo tee /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt",
       "sudo chown ${var.vm_admin_username}:${var.vm_admin_username} /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt",
       "sudo chmod 644 /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt",
       "sudo chown -R ${var.vm_admin_username}:${var.vm_admin_username} /home/${var.vm_admin_username}/tf-jdiscord",

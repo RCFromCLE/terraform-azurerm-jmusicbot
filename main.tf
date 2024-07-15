@@ -17,6 +17,23 @@ provider "azurerm" {
   features {}
   subscription_id = var.sub
 }
+
+############################################ data sources ############################################
+data "azurerm_key_vault" "jdiscord_kv" {
+  name                = "jdiscord-kv"
+  resource_group_name = "jdiscord-kv-rg"
+}
+
+data "azurerm_key_vault_secret" "ssh_public_key" {
+  name         = "ssh-public-key"
+  key_vault_id = data.azurerm_key_vault.jdiscord_kv.id
+}
+
+data "azurerm_key_vault_secret" "ssh_private_key" {
+  name         = "ssh-private-key"
+  key_vault_id = data.azurerm_key_vault.jdiscord_kv.id
+}
+
 ############################################ resource blocks ############################################
 # create a resource group
 resource "azurerm_resource_group" "rg1" {
@@ -92,7 +109,7 @@ resource "azurerm_linux_virtual_machine" "vm1" {
 
   admin_ssh_key {
     username   = var.vm_admin_username
-    public_key = var.ssh_public_key
+    public_key = data.azurerm_key_vault_secret.ssh_public_key.value
   }
   source_image_reference {
     publisher = var.vm_image_publisher
@@ -117,7 +134,7 @@ resource "null_resource" "run_jdiscordbot" {
       type        = "ssh"
       user        = var.vm_admin_username
       host        = azurerm_linux_virtual_machine.vm1.public_ip_address
-      private_key = var.ssh_private_key
+      private_key = data.azurerm_key_vault_secret.ssh_private_key.value
     }
     inline = [
       "sudo ${var.remove_tfjdiscord_command}",

@@ -26,9 +26,12 @@ data "azurerm_key_vault" "jdiscord_kv" {
 
 data "azurerm_key_vault_secret" "ssh_public_key" {
   name         = "ssh-public-key"
-  key_vault_id = data.azurerm_key_vault.jdiscord_kv.id
+  key_vault_id = azurerm_key_vault.jdiscord_kv.id
 }
 
+locals {
+  ssh_public_key = trimspace(data.azurerm_key_vault_secret.ssh_public_key.value)
+}
 data "azurerm_key_vault_secret" "ssh_private_key" {
   name         = "ssh-private-key"
   key_vault_id = data.azurerm_key_vault.jdiscord_kv.id
@@ -99,28 +102,30 @@ resource "azurerm_network_interface_security_group_association" "nsg_nic_assoc" 
 }
 # create a virtual machine run jdiscordbot service
 resource "azurerm_linux_virtual_machine" "vm1" {
-  name                            = var.vm_name
-  resource_group_name             = azurerm_resource_group.rg1.name
+  name                            = "jdb-vm"
   location                        = azurerm_resource_group.rg1.location
-  size                            = var.vm_size
+  resource_group_name             = azurerm_resource_group.rg1.name
   network_interface_ids           = [azurerm_network_interface.nic.id]
-  disable_password_authentication = true
+  size                            = "Standard_B1ms"
   admin_username                  = var.vm_admin_username
+  disable_password_authentication = true
 
   admin_ssh_key {
     username   = var.vm_admin_username
-    public_key = data.azurerm_key_vault_secret.ssh_public_key.value
+    public_key = local.ssh_public_key
   }
-  source_image_reference {
-    publisher = var.vm_image_publisher
-    offer     = var.vm_image_offer
-    sku       = var.vm_image_sku
-    version   = var.vm_image_version
-  }
+
   os_disk {
+    name                 = "os-disk"
     caching              = "ReadWrite"
     storage_account_type = "Standard_LRS"
-    name                 = var.os_disk_name
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "UbuntuServer"
+    sku       = "18_04-lts-gen2"
+    version   = "latest"
   }
 }
 # Create a local file to store the config.txt file - DO NOT CHECK CONFIG.TXT INTO VERSION CONTROL.

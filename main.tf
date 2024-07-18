@@ -136,44 +136,46 @@ data "azurerm_public_ip" "vm_ip" {
   name                = azurerm_public_ip.public_ip.name
   resource_group_name = azurerm_resource_group.rg1.name
 }
-# Create a null resource to create the jdiscordbot service
-resource "null_resource" "run_jdiscordbot" {
-  provisioner "remote-exec" {
-    connection {
-      type        = "ssh"
-      user        = var.vm_admin_username
-      host        = azurerm_linux_virtual_machine.vm1.public_ip_address
-      private_key = data.azurerm_key_vault_secret.ssh_private_key.value
-    }
-    inline = [
-      "sudo ${var.remove_tfjdiscord_command}",
-      "sudo add-apt-repository -y ppa:openjdk-r/ppa",
-      "sudo apt-get update",
-      "sudo apt-get install -y default-jdk",
-      "sudo git clone ${var.repo_url} /home/${var.vm_admin_username}/tf-jdiscord",
-      "sudo mkdir -p /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot",
-      "echo 'token = ${var.discord_bot_token}' | sudo tee /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt",
-      "echo 'owner = ${var.discord_bot_owner}' | sudo tee -a /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt",
-      "echo 'prefix = ${var.discord_bot_prefix}' | sudo tee -a /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt",
-      "sudo chown ${var.vm_admin_username}:${var.vm_admin_username} /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt",
-      "sudo chmod 644 /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt",
-      "sudo chown -R ${var.vm_admin_username}:${var.vm_admin_username} /home/${var.vm_admin_username}/tf-jdiscord",
-      "echo '[Unit]' | sudo tee /etc/systemd/system/jdiscordbot.service",
-      "echo 'Description=JDiscordBot Service' | sudo tee -a /etc/systemd/system/jdiscordbot.service",
-      "echo 'After=network.target' | sudo tee -a /etc/systemd/system/jdiscordbot.service",
-      "echo '[Service]' | sudo tee -a /etc/systemd/system/jdiscordbot.service",
-      "echo 'Type=simple' | sudo tee -a /etc/systemd/system/jdiscordbot.service",
-      "echo 'User=${var.vm_admin_username}' | sudo tee -a /etc/systemd/system/jdiscordbot.service",
-      "echo 'WorkingDirectory=/home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot' | sudo tee -a /etc/systemd/system/jdiscordbot.service",
-      "echo 'ExecStart=/usr/bin/java -jar /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/${var.jar_path}' | sudo tee -a /etc/systemd/system/jdiscordbot.service",
-      "echo 'Restart=on-failure' | sudo tee -a /etc/systemd/system/jdiscordbot.service",
-      "echo '[Install]' | sudo tee -a /etc/systemd/system/jdiscordbot.service",
-      "echo 'WantedBy=multi-user.target' | sudo tee -a /etc/systemd/system/jdiscordbot.service",
-      "sudo systemctl enable jdiscordbot.service",
-      "sudo systemctl start jdiscordbot.service",
-      "sleep 10"
-    ]
-  }
+resource "azurerm_virtual_machine_extension" "run_jdiscordbot" {
+  name                 = "run_jdiscordbot"
+  virtual_machine_id   = azurerm_linux_virtual_machine.vm1.id
+  publisher            = "Microsoft.Azure.Extensions"
+  type                 = "CustomScript"
+  type_handler_version = "2.1"
+
+  settings = jsonencode({
+    "script": base64encode(<<-EOT
+      #!/bin/bash
+      ${var.remove_tfjdiscord_command}
+      sudo add-apt-repository -y ppa:openjdk-r/ppa
+      sudo apt-get update
+      sudo apt-get install -y default-jdk
+      sudo git clone ${var.repo_url} /home/${var.vm_admin_username}/tf-jdiscord
+      sudo mkdir -p /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot
+      echo 'token = ${var.discord_bot_token}' | sudo tee /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt
+      echo 'owner = ${var.discord_bot_owner}' | sudo tee -a /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt
+      echo 'prefix = ${var.discord_bot_prefix}' | sudo tee -a /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt
+      sudo chown ${var.vm_admin_username}:${var.vm_admin_username} /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt
+      sudo chmod 644 /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt
+      sudo chown -R ${var.vm_admin_username}:${var.vm_admin_username} /home/${var.vm_admin_username}/tf-jdiscord
+      echo '[Unit]' | sudo tee /etc/systemd/system/jdiscordbot.service
+      echo 'Description=JDiscordBot Service' | sudo tee -a /etc/systemd/system/jdiscordbot.service
+      echo 'After=network.target' | sudo tee -a /etc/systemd/system/jdiscordbot.service
+      echo '[Service]' | sudo tee -a /etc/systemd/system/jdiscordbot.service
+      echo 'Type=simple' | sudo tee -a /etc/systemd/system/jdiscordbot.service
+      echo 'User=${var.vm_admin_username}' | sudo tee -a /etc/systemd/system/jdiscordbot.service
+      echo 'WorkingDirectory=/home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot' | sudo tee -a /etc/systemd/system/jdiscordbot.service
+      echo 'ExecStart=/usr/bin/java -jar /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/${var.jar_path}' | sudo tee -a /etc/systemd/system/jdiscordbot.service
+      echo 'Restart=on-failure' | sudo tee -a /etc/systemd/system/jdiscordbot.service
+      echo '[Install]' | sudo tee -a /etc/systemd/system/jdiscordbot.service
+      echo 'WantedBy=multi-user.target' | sudo tee -a /etc/systemd/system/jdiscordbot.service
+      sudo systemctl enable jdiscordbot.service
+      sudo systemctl start jdiscordbot.service
+    EOT
+    )
+  })
+
+  depends_on = [azurerm_linux_virtual_machine.vm1]
 }
 # Create a random string for the storage account name
 resource "random_string" "sa_suffix" {

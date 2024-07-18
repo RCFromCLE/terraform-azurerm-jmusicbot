@@ -153,7 +153,8 @@ resource "azurerm_virtual_machine_extension" "run_jdiscordbot" {
       echo 'prefix = "${var.discord_bot_prefix}"' | sudo tee -a /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt
       sudo chown ${var.vm_admin_username}:${var.vm_admin_username} /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt
       sudo chmod 644 /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt
-      sudo chown -R ${var.vm_admin_username}:${var.vm_admin_username} /home/${var.vm_admin_username}/tf-jdiscord      echo '[Unit]' | sudo tee /etc/systemd/system/jdiscordbot.service
+      sudo chown -R ${var.vm_admin_username}:${var.vm_admin_username} /home/${var.vm_admin_username}/tf-jdiscord      
+      echo '[Unit]' | sudo tee /etc/systemd/system/jdiscordbot.service
       echo 'Description=JDiscordBot Service' | sudo tee -a /etc/systemd/system/jdiscordbot.service
       echo 'After=network.target' | sudo tee -a /etc/systemd/system/jdiscordbot.service
       echo '[Service]' | sudo tee -a /etc/systemd/system/jdiscordbot.service

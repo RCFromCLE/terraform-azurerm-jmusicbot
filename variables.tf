@@ -175,3 +175,13 @@ variable "discord_bot_prefix" {
   description = "The command prefix for the Discord bot"
   default     = "!"
 }
+variable "key_vault_name" {
+  type        = string
+  description = "The name of the key vault."
+  default     = "jdiscordbot-kv"
+}
+variable "key_vault_resource_group_name" {
+  type        = string
+  description = "The name of the resource group for the key vault."
+  default     = "jdiscordbot-kv-rg"    
+}

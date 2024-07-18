@@ -19,23 +19,23 @@ provider "azurerm" {
 }
 
 ############################################ data sources ############################################
-# data "azurerm_key_vault" "jdiscord_kv" {
-#   name                = "jdiscord-kv"
-#   resource_group_name = "jdiscord-kv-rg"
-# }
+data "azurerm_key_vault" "jdiscord_kv" {
+  name                = "jdiscord-kv"
+  resource_group_name = "jdiscord-kv-rg"
+}
 
-# data "azurerm_key_vault_secret" "ssh_public_key" {
-#   name         = "ssh-public-key"
-#   key_vault_id = azurerm_key_vault.jdiscord_kv.id
-# }
+data "azurerm_key_vault_secret" "ssh_public_key" {
+  name         = "ssh-public-key"
+  key_vault_id = azurerm_key_vault.jdiscord_kv.id
+}
 
-# locals {
-#   ssh_public_key = trimspace(data.azurerm_key_vault_secret.ssh_public_key.value)
-# }
-# data "azurerm_key_vault_secret" "ssh_private_key" {
-#   name         = "ssh-private-key"
-#   key_vault_id = data.azurerm_key_vault.jdiscord_kv.id
-# }
+locals {
+  ssh_public_key = trimspace(data.azurerm_key_vault_secret.ssh_public_key.value)
+}
+data "azurerm_key_vault_secret" "ssh_private_key" {
+  name         = "ssh-private-key"
+  key_vault_id = data.azurerm_key_vault.jdiscord_kv.id
+}
 
 ############################################ resource blocks ############################################
 # create a resource group

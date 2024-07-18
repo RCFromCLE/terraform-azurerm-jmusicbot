@@ -26,15 +26,11 @@ data "azurerm_key_vault" "jdiscord_kv" {
 
 data "azurerm_key_vault_secret" "ssh_public_key" {
   name         = "ssh-public-key"
-  key_vault_id = azurerm_key_vault.jdiscord_kv.id
+  key_vault_id = data.azurerm_key_vault.jdiscord_kv.id
 }
 
 locals {
   ssh_public_key = trimspace(data.azurerm_key_vault_secret.ssh_public_key.value)
-}
-data "azurerm_key_vault_secret" "ssh_private_key" {
-  name         = "ssh-private-key"
-  key_vault_id = data.azurerm_key_vault.jdiscord_kv.id
 }
 
 ############################################ resource blocks ############################################
@@ -128,10 +124,6 @@ resource "azurerm_linux_virtual_machine" "vm1" {
     version   = "latest"
   }
 }
-# Create a local file to store the config.txt file - DO NOT CHECK CONFIG.TXT INTO VERSION CONTROL.
-# data "local_file" "config_txt" {
-#   filename = "${path.module}/config.txt" # Ensure the path to config.txt is correct
-# }
 data "azurerm_public_ip" "vm_ip" {
   name                = azurerm_public_ip.public_ip.name
   resource_group_name = azurerm_resource_group.rg1.name

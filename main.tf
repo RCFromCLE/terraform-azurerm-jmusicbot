@@ -19,20 +19,19 @@ provider "azurerm" {
 }
 
 ############################################ data sources ############################################
-data "azurerm_key_vault" "jdiscord_kv" {
-  name                = var.key_vault_name
-  resource_group_name = var.key_vault_resource_group_name
-}
+# data "azurerm_key_vault" "jdiscord_kv" {
+#   name                = var.key_vault_name
+#   resource_group_name = var.key_vault_resource_group_name
+# }
 
-data "azurerm_key_vault_secret" "ssh_public_key" {
-  name         = "ssh-public-key"
-  key_vault_id = data.azurerm_key_vault.jdiscord_kv.id
-}
+# data "azurerm_key_vault_secret" "ssh_public_key" {
+#   name         = "ssh-public-key"
+#   key_vault_id = data.azurerm_key_vault.jdiscord_kv.id
+# }
 
-locals {
-  ssh_public_key = trimspace(data.azurerm_key_vault_secret.ssh_public_key.value)
-}
-
+# locals {
+#   ssh_public_key = trimspace(data.azurerm_key_vault_secret.ssh_public_key.value)
+# }
 ############################################ resource blocks ############################################
 # create a resource group
 resource "azurerm_resource_group" "rg1" {
@@ -96,6 +95,11 @@ resource "azurerm_network_interface_security_group_association" "nsg_nic_assoc" 
   network_interface_id      = azurerm_network_interface.nic.id
   network_security_group_id = azurerm_network_security_group.nsg.id
 }
+# create a private key for the virtual machine
+resource "tls_private_key" "linux_test_ssh" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
 # create a virtual machine run jdiscordbot service
 resource "azurerm_linux_virtual_machine" "vm1" {
   name                            = var.vm_name
@@ -108,7 +112,7 @@ resource "azurerm_linux_virtual_machine" "vm1" {
 
   admin_ssh_key {
     username   = var.vm_admin_username
-    public_key = local.ssh_public_key
+    public_key = tls_private_key.linux_test_ssh.public_key_openssh
   }
 
   os_disk {

@@ -127,6 +127,9 @@ resource "azurerm_linux_virtual_machine" "vm1" {
     sku       = var.vm_image_sku
     version   = var.vm_image_version
   }
+  lifecycle {
+    ignore_changes = [ boot_diagnostics ]
+  }
 }
 data "azurerm_public_ip" "vm_ip" {
   name                = azurerm_public_ip.public_ip.name

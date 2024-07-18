@@ -183,5 +183,5 @@ variable "key_vault_name" {
 variable "key_vault_resource_group_name" {
   type        = string
   description = "The name of the resource group for the key vault."
-  default     = "jdiscordbot-kv-rg"    
+  default     = "jdiscord-kv-rg"    
 }

@@ -67,18 +67,6 @@ variable "vm_size" {
   description = "The size of the virtual machine."
   default     = "Standard_B1ms"
 }
-
-variable "ssh_public_key" {
-  type        = string
-  description = "The public SSH key for VM access."
-}
-
-variable "ssh_private_key" {
-  type        = string
-  description = "The private SSH key for VM access."
-  sensitive   = true
-}
-
 variable "vm_image_publisher" {
   type        = string
   description = "The publisher of the VM image."

@@ -20,8 +20,8 @@ provider "azurerm" {
 
 ############################################ data sources ############################################
 data "azurerm_key_vault" "jdiscord_kv" {
-  name                = "jdiscord-kv"
-  resource_group_name = "jdiscord-kv-rg"
+  name                = var.key_vault_name
+  resource_group_name = var.key_vault_resource_group_name
 }
 
 data "azurerm_key_vault_secret" "ssh_public_key" {
@@ -98,11 +98,11 @@ resource "azurerm_network_interface_security_group_association" "nsg_nic_assoc" 
 }
 # create a virtual machine run jdiscordbot service
 resource "azurerm_linux_virtual_machine" "vm1" {
-  name                            = "jdb-vm"
+  name                            = var.vm_name
   location                        = azurerm_resource_group.rg1.location
   resource_group_name             = azurerm_resource_group.rg1.name
   network_interface_ids           = [azurerm_network_interface.nic.id]
-  size                            = "Standard_B1ms"
+  size                            = var.vm_size
   admin_username                  = var.vm_admin_username
   disable_password_authentication = true
 
@@ -112,16 +112,16 @@ resource "azurerm_linux_virtual_machine" "vm1" {
   }
 
   os_disk {
-    name                 = "os-disk"
+    name                 = var.os_disk_name
     caching              = "ReadWrite"
     storage_account_type = "Standard_LRS"
   }
 
   source_image_reference {
-    publisher = "Canonical"
-    offer     = "UbuntuServer"
-    sku       = "18_04-lts-gen2"
-    version   = "latest"
+    publisher = var.vm_image_publisher
+    offer     = var.vm_image_offer
+    sku       = var.vm_image_sku
+    version   = var.vm_image_version
   }
 }
 data "azurerm_public_ip" "vm_ip" {

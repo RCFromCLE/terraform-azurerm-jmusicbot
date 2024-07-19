@@ -1,0 +1,67 @@
+name: Update MusicBot JAR
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Run daily at midnight UTC
+  workflow_dispatch:  # Allow manual triggers
+
+jobs:
+  check-and-update-jar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Check for new MusicBot release
+        id: check-release
+        run: |
+          latest_release=$(curl -s https://api.github.com/repos/jagrosh/MusicBot/releases/latest | jq -r .tag_name)
+          echo "Latest release: $latest_release"
+          echo "::set-output name=new_version::$latest_release"
+      
+      - name: Update JAR file
+        id: update-jar
+        if: steps.check-release.outputs.new_version != ''
+        run: |
+          current_latest=$(ls jdiscordmusicbot/JMusicBot-*.jar | sort -V | tail -n 1)
+          if [ "jdiscordmusicbot/JMusicBot-${{ steps.check-release.outputs.new_version }}.jar" != "$current_latest" ]; then
+            wget https://github.com/jagrosh/MusicBot/releases/download/${{ steps.check-release.outputs.new_version }}/JMusicBot-${{ steps.check-release.outputs.new_version }}.jar -O jdiscordmusicbot/JMusicBot-${{ steps.check-release.outputs.new_version }}.jar
+            git config user.name github-actions
+            git config user.email github-actions@github.com
+            git add jdiscordmusicbot/JMusicBot-${{ steps.check-release.outputs.new_version }}.jar
+            git commit -m "Add JMusicBot version ${{ steps.check-release.outputs.new_version }}"
+            git push
+            echo "::set-output name=updated::true"
+          else
+            echo "::set-output name=updated::false"
+          fi
+
+      - name: Update variables.tf
+        if: steps.update-jar.outputs.updated == 'true'
+        run: |
+          sed -i 's/default     = "JMusicBot-.*\.jar"/default     = "JMusicBot-${{ steps.check-release.outputs.new_version }}.jar"/' variables.tf
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add variables.tf
+          git commit -m "Update default JAR version in variables.tf"
+          git push
+
+      - name: Create Release
+        if: steps.update-jar.outputs.updated == 'true'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.check-release.outputs.new_version }}
+          release_name: Release ${{ steps.check-release.outputs.new_version }}
+          body: Updated to JMusicBot version ${{ steps.check-release.outputs.new_version }}
+          draft: false
+          prerelease: false
+
+      - name: Repository Dispatch
+        if: steps.update-jar.outputs.updated == 'true'
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          repository: your-username/your-config-repo
+          event-type: module-updated
+          client-payload: '{"new_version": "${{ steps.check-release.outputs.new_version }}"}'

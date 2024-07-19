@@ -62,6 +62,6 @@ jobs:
         uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.PAT_TOKEN }}
-          repository: your-username/your-config-repo
+          repository: RCFromCLE/terraform-azurerm-jmusicbot-config
           event-type: module-updated
           client-payload: '{"new_version": "${{ steps.check-release.outputs.new_version }}"}'

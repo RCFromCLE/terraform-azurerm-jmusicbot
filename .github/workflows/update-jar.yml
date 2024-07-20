@@ -1,4 +1,4 @@
-name: Update-JAR
+name: update-jar&release
 
 on:
   schedule:
@@ -94,7 +94,5 @@ jobs:
           release_name: Release ${{ steps.get_latest_release.outputs.new_version }}
           body: |
             Updated to JMusicBot version ${{ steps.check-release.outputs.new_version }}
-            
-            Tag: jmusicbot-update-${{ steps.check-release.outputs.new_version }}
           draft: false
           prerelease: false

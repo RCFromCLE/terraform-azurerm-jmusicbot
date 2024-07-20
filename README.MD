@@ -1,28 +1,22 @@
 # terraform-azurerm-jmusicbot
 
+![Terraform, Github, Azure, logo](images/tf-gh-azure.png)
+
 ## Introduction
 
 This Terraform module deploys JMusicBot on Azure, offering a robust and cost-effective solution for Discord server owners while serving as an excellent practice project for Azure-Terraform platform engineers. For optimal performance and security, deployment and management via Terraform Cloud is strongly recommended.
 
-![logo](images/logo.png) 
-
 ### What is JMusicBot?
 
-[![Build and Test](https://github.com/jagrosh/MusicBot/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/jagrosh/MusicBot/actions/workflows/build-and-test.yml)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/jagrosh/MusicBot)
+![JMusicBot Logo](images/jmusicbot.png)
 
-https://github.com/jagrosh/MusicBot
+JMusicBot is an open source Discord music bot that plays music in voice channels from all kinds of sources (YouTube being the primary). It is a Java application that requires a Linux or Windows machine to run. The bot is controlled via commands in a Discord text channel. For more information, see the [JMusicBot Wiki](https://jmusicbot.com/).
 
-JmusicBot is a Discord music bot that plays music in voice channels from all kinds of sources (YouTube being the primary). It is a Java application that requires a Linux or Windows machine to run. This module sets up all necessary Azure resources for running JMusicBot, including a Linux VM, Function App, and associated networking resources. The Azure Function dynamically manages the VM lifecycle based on Discord activity, starting the VM when users join the music channel and stopping it when all users leave voice channels. GitHub Actions working together with Terraform Cloud runs keep JMusicBot up-to-date with the latest releases, ensuring your bot is always running the latest version.
+### Project Origin
 
-Why Did I Create This Project?
+Initially running JMusicBot locally, I found it unsustainable as the bot went offline whenever I did. I moved to Azure with a standard B1 VM, which worked for a while but cost $20-30 per month. To reduce costs, I implemented an Azure Function to start and stop the VM based on user activity in the music channel, lowering the cost to zero when the bot was not in use. I then automated updates using GitHub Actions and Terraform Cloud. This project aims to provide a fully automated solution for running JMusicBot on Azure with minimal cost and maintenance, and to serve as a practical project for learning Azure, Terraform, and GitHub Actions.
 
-I have been running JMusicBot locally first then I realized that wasn't sustainable as whenever I went offline the bot also went offline. I then moved to Azure with a standard B1 VM, this worked for a while but it was costing 20-30 dollars per month. I then implemented the Azure Function to start and stop the VM when users joined and left the music channel. This reduced the cost to 0.00 when no one was using the bot. I then realized that I could automate the updates with GitHub Actions and Terraform Cloud. This project is the result of that realization. The goal of this project is to provide a completely automated solution for running JMusicBot on Azure with minimal cost and maintenance ad to provide a practical project for learning Azure, Terraform, and GitHub Actions.
-
-In the future, I plan to add more features to the Azure Function such as top ten songs played, top ten users, also need to automate the discord bot token rotation as Discord has revoked my token due to "abuse suspected" as the bot connected to a server so many times within a short time period. For now, one would need to manually rotate the token in the Terraform Cloud workspace, rerun the workspace, and then restart the Azure Function App.
-
-![Terraform, Github, Azure, logo](images/tf-gh-azure.png)
-
+Future enhancements include adding features such as tracking the top ten songs and users, and automating the Discord bot token rotation to address issues of token revocation due to suspected abuse. Currently, token rotation must be done manually in the Terraform Cloud workspace.
 
 ## Key Features
 

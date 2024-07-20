@@ -1,10 +1,26 @@
 # terraform-azurerm-jmusicbot
 
+## Introduction
+
 This Terraform module deploys JMusicBot on Azure, offering a robust and cost-effective solution for Discord server owners while serving as an excellent practice project for Azure-Terraform platform engineers. For optimal performance and security, deployment and management via Terraform Cloud is strongly recommended.
 
-![jmusicbot logo](logo.png)
+![logo](images/logo.png) 
 
-![Terraform Cloud, GitHub Actions, Azure, Logo](1_8iuYWFB_wqN91w1eB5Ggxg.png)
+### What is JMusicBot?
+
+[![Build and Test](https://github.com/jagrosh/MusicBot/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/jagrosh/MusicBot/actions/workflows/build-and-test.yml)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/jagrosh/MusicBot)
+
+JmusicBot is a Discord music bot that plays music in voice channels from all kinds of sources (YouTube being the primary). It is a Java application that requires a Linux or Windows machine to run. This module sets up all necessary Azure resources for running JMusicBot, including a Linux VM, Function App, and associated networking resources. The Azure Function dynamically manages the VM lifecycle based on Discord activity, starting the VM when users join the music channel and stopping it when all users leave voice channels. GitHub Actions working together with Terraform Cloud runs keep JMusicBot up-to-date with the latest releases, ensuring your bot is always running the latest version.
+
+[![update-jar-and-release](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot/actions/workflows/update-jar.yml/badge.svg)](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot/actions/workflows/update-jar.yml)
+
+Why Did I Create This Project?
+
+I have been running JMusicBot locally first then I realized that wasn't sustainable as whenever I went offline the bot also went offline. I then moved to Azure with a standard B1 VM, this worked for a while but it was costing 20-30 dollars per month. I then implemented the Azure Function to start and stop the VM when users joined and left the music channel. This reduced the cost to 0.00 when no one was using the bot. I then realized that I could automate the updates with GitHub Actions and Terraform Cloud. This project is the result of that realization. The goal of this project is to provide a completely automated solution for running JMusicBot on Azure with minimal cost and maintenance ad to provide a practical project for learning Azure, Terraform, and GitHub Actions.
+
+In the future, I plan to add more features to the Azure Function such as top ten songs played, top ten users, also need to automate the discord bot token rotation as Discord has revoked my token due to "abuse suspected" as the bot connected to a server so many times within a short time period. For now, one would need to manually rotate the token in the Terraform Cloud workspace, rerun the workspace, and then restart the Azure Function App.
+
 
 ## Key Features
 
@@ -15,8 +31,6 @@ This Terraform module deploys JMusicBot on Azure, offering a robust and cost-eff
   - Stops the VM when all users leave voice channels.
 
 - **Continuous Updates**: Includes a GitHub Actions workflow to keep JMusicBot up-to-date with the latest releases.
-
-[![update-jar-and-release](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot/actions/workflows/update-jar.yml/badge.svg)](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot/actions/workflows/update-jar.yml)
 
 - **Fully Automated Deployment**: When using the configuration repository, the "Check for Module Update and TF Apply" action can automatically apply new releases created by the update-jar action.
 

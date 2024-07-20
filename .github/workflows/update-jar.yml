@@ -1,4 +1,4 @@
-name: update-jar&release
+name: update-jar-and-release
 
 on:
   schedule:
@@ -33,7 +33,7 @@ jobs:
           latest_release=$(curl -s https://api.github.com/repos/jagrosh/MusicBot/releases/latest | jq -r .tag_name)
           echo "Latest release: $latest_release"
           echo "new_version=$latest_release" >> $GITHUB_OUTPUT
-     
+
       - name: Update JAR file
         id: update-jar
         run: |
@@ -73,6 +73,12 @@ jobs:
           else
             echo "variables.tf not found. Skipping update."
           fi
+
+      - name: Exit if no new release found
+        if: steps.update-jar.outputs.updated == 'false'
+        run: |
+          echo "No new JMusicBot version found. Exiting workflow."
+          exit 0
 
       - name: Get latest release version
         id: get_latest_release

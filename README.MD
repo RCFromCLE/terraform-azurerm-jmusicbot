@@ -1,6 +1,10 @@
-# terraform-azure-jmusicbot
+# terraform-azurerm-jmusicbot
 
-This Terraform module deploys JMusicBot on Azure, providing a robust and cost-effective solution for Discord server owners and an excellent practice project for Azure DevOps engineers. The module strongly recommends deployment and management via Terraform Cloud for optimal performance and security.
+This Terraform module deploys JMusicBot on Azure, offering a robust and cost-effective solution for Discord server owners while serving as an excellent practice project for Azure-Terraform platform engineers. For optimal performance and security, deployment and management via Terraform Cloud is strongly recommended.
+
+![jmusicbot logo](logo.png)
+
+![Terraform Cloud, GitHub Actions, Azure, Logo](1_8iuYWFB_wqN91w1eB5Ggxg.png)
 
 ## Key Features
 
@@ -9,24 +13,31 @@ This Terraform module deploys JMusicBot on Azure, providing a robust and cost-ef
 - **Automated Lifecycle Management**: Utilizes an Azure Function (`jdiscord-function`) to dynamically manage the VM.
   - Starts the VM when users join the music channel.
   - Stops the VM when all users leave voice channels.
+
 - **Continuous Updates**: Includes a GitHub Actions workflow to keep JMusicBot up-to-date with the latest releases.
-- **Fully Automated Deployment**: When using the configuration repository, the "Check for Module Update and TF Apply" action can automatically apply new releases created by the update-jar action.
 
 [![update-jar-and-release](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot/actions/workflows/update-jar.yml/badge.svg)](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot/actions/workflows/update-jar.yml)
 
-This module offers a fully automated deployment and update process, making it an ideal solution for Discord server owners looking to provide a reliable music bot service. For Azure DevOps engineers, it presents a comprehensive project that combines Infrastructure as Code, serverless computing, and CI/CD practices in a real-world application.
+- **Fully Automated Deployment**: When using the configuration repository, the "Check for Module Update and TF Apply" action can automatically apply new releases created by the update-jar action.
+
+- **Secure Configuration**: Sensitive variables are stored securely in Terraform Cloud or `terraform.tfvars` Key Vault, and GitHub Actions secrets. See configuration repository for how we use an Azure Key Vault, Terraform Cloud workspace variables, variable sets, and GitHub Actions secrets to secure sensitive information used in this project.
+
+- **Cost-Effective**: Utilizes serverless computing with Azure Functions. The consumption-based pricing model ensures you only pay for what you use and your first 1 million requests are free. This solution will never come close to that. Cost will be 0.00 for the Azure Function in this solution.
+
+- **Real-World Application**: Combines Infrastructure as Code, an open source Java app, serverless computing, and CI/CD practices in a practical project.
 
 ## Requirements
 
 To use this module, you'll need:
 
-1. **Azure Subscription**: An active Azure subscription with sufficient permissions to create resources.
+1. **Azure Subscription**: An active Azure subscription with sufficient permissions to create resources. I created a new subscription for this project. You can use an existing subscription but be aware of the costs associated with running the VM and Function App and you will need to think about custom permissions for the service principal if you are using an existing subscription.
 
 2. **Terraform**: Version 0.12 or later installed on your local machine and system path environmnt variable set.
 
-3. **Terraform Cloud Account**: A Terraform Cloud account for state management and secure variable storage.
+3. **Terraform Cloud Account**: A Terraform Cloud account for state management and secure variable storage. This is required for the infrastructure deployment, state management, secure variable storage and update workflows. You can sign up for a free account at [Terraform Cloud](https://app.terraform.io/signup/account).
 
-4. **Azure Service Principal**: An Azure AD application and service principal with Contributor access to your Azure subscription. You'll need:
+4. **Azure Service Principal**: An Azure AD application and service principal with owner access to your newly created Azure subscription. Or a custom role for an existing subscription, which is out of scope for this project. I used owner so I am not sure what the exact permissions this project requires. The following information is required for the service principal:
+
    - Client ID
    - Client Secret
    - Tenant ID
@@ -45,12 +56,12 @@ See JMusicBot's wiki for more information on setting up a Discord bot: [JMusicBo
 
 7. **Azure CLI**: Installed and configured for local testing and deployment.
 
-8. **PowerShell**: For running the `set_workspace_variables.ps1` script (Windows environments).
-
 9. **VS Code** (recommended): With the following extensions:
     - Azure tools
+    - PowerShell
     - GitHub Actions
     - Terraform - HashiCorp
+    - HCP - Terraform
 
 10. **Configuration Repository**: A forked copy of the [terraform-azurerm-jmusicbot-config](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot-config) repository for managing the infrastructure configuration.
 
@@ -119,7 +130,7 @@ terraform {
 }
 ```
 
-3. Provide values for the required variables in your Terraform Cloud workspace or `terraform.tfvars` file.
+3. Provide values for the required variables in your Terraform Cloud workspace or `terraform.tfvars` file. You can use set_workspace_variable.ps1 to set the variables in the TF Cloud Workspace. Simply fill out your Terraform API token, place the script in the same directory as terraform.tfvars and run the script.
 
 ## Resources Deployed
 
@@ -199,10 +210,10 @@ For detailed setup instructions and a complete configuration example, refer to t
 
 ## Notes
 
-- This module is designed to work with Terraform Cloud
-- Ensure your Azure service principal has the necessary permissions
+- This module is designed to run within a Terraform Cloud workspace in concert with the jdiscord-kv workspace. See the configuration repository for detailed setup instructions.
+- Ensure your Azure service principal has the necessary permissions  (owner over your musicbot subscription) to create resources.
 - See configuration repository action called "Check for Module Update and TF Apply" for how to apply the new release created by update-jar action
-- Keep sensitive variables secure in Terraform Cloud or `terraform.tfvars`
+- Keep sensitive variables secure in Terraform Cloud or `terraform.tfvars` never in variables.tf as it could be exposed in the GitHub repository.
 - Forking this module is not necessary unless you have specific security requirements
 
 [Terraform Registry page](https://registry.terraform.io/modules/RCFromCLE/jmusicbot/azure/latest) for this module.

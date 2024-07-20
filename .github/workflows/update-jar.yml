@@ -14,7 +14,7 @@ jobs:
       - name: Get the current repository release version
         id: current-release
         run: |
-          current_version=$(git describe --tags --abbrev=0 | sed 's/^v//')
+          current_version=$(git describe --tags --abbrev=0 | sed 's/^v//' || echo "0.0.0")
           echo "Current release: $current_version"
           echo "::set-output name=current_version::$current_version"
 
@@ -30,9 +30,11 @@ jobs:
         if: steps.check-release.outputs.new_version != ''
         run: |
           current_version="${{ steps.current-release.outputs.current_version }}"
-          new_version="${current_version%.*}.$((${current_version##*.}+1))"
+          IFS='.' read -r -a version_parts <<< "$current_version"
+          new_patch=$((version_parts[2] + 1))
+          new_version="${version_parts[0]}.${version_parts[1]}.$new_patch"
           echo "New version: $new_version"
-          current_latest=$(ls jdiscordmusicbot/JMusicBot-*.jar | sort -V | tail -n 1)
+          current_latest=$(ls jdiscordmusicbot/JMusicBot-*.jar 2>/dev/null | sort -V | tail -n 1 || echo "")
           if [ "jdiscordmusicbot/JMusicBot-${{ steps.check-release.outputs.new_version }}.jar" != "$current_latest" ]; then
             wget https://github.com/jagrosh/MusicBot/releases/download/${{ steps.check-release.outputs.new_version }}/JMusicBot-${{ steps.check-release.outputs.new_version }}.jar -O jdiscordmusicbot/JMusicBot-${{ steps.check-release.outputs.new_version }}.jar
             git config user.name github-actions

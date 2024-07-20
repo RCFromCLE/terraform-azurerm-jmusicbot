@@ -13,13 +13,19 @@ jobs:
         with:
           fetch-depth: 0  # Fetch all history for all tags and branches
       
-      - name: Get the current repository release version
-        id: current-release
+      - name: Check for existing JAR and get current version
+        id: current-jar
         run: |
-          current_version=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          current_version=${current_version#v}  # Remove 'v' prefix if present
-          echo "Current release: $current_version"
-          echo "::set-output name=current_version::$current_version"
+          mkdir -p jdiscordmusicbot
+          current_jar=$(ls jdiscordmusicbot/JMusicBot-*.jar 2>/dev/null | sort -V | tail -n 1 || echo "")
+          if [ -z "$current_jar" ]; then
+            echo "No existing JAR found."
+            echo "::set-output name=current_version::0.0.0"
+          else
+            current_version=$(echo "$current_jar" | sed -n 's/.*JMusicBot-\(.*\)\.jar/\1/p')
+            echo "Current JAR version: $current_version"
+            echo "::set-output name=current_version::$current_version"
+          fi
 
       - name: Check for new MusicBot release
         id: check-release
@@ -31,12 +37,11 @@ jobs:
       - name: Update JAR file
         id: update-jar
         run: |
-          current_version="${{ steps.current-release.outputs.current_version }}"
+          current_version="${{ steps.current-jar.outputs.current_version }}"
           latest_version="${{ steps.check-release.outputs.new_version }}"
           
           if [ "$latest_version" != "$current_version" ]; then
             echo "New version available: $latest_version"
-            mkdir -p jdiscordmusicbot
             wget https://github.com/jagrosh/MusicBot/releases/download/$latest_version/JMusicBot-$latest_version.jar -O jdiscordmusicbot/JMusicBot-$latest_version.jar
             git config user.name github-actions
             git config user.email github-actions@github.com
@@ -53,12 +58,16 @@ jobs:
       - name: Update variables.tf
         if: steps.update-jar.outputs.updated == 'true'
         run: |
-          sed -i 's/default     = "JMusicBot-.*\.jar"/default     = "JMusicBot-${{ steps.check-release.outputs.new_version }}.jar"/' variables.tf
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git add variables.tf
-          git commit -m "Update default JAR version in variables.tf"
-          git push
+          if [ -f variables.tf ]; then
+            sed -i 's/default\s*=\s*"JMusicBot-.*\.jar"/default = "JMusicBot-${{ steps.check-release.outputs.new_version }}.jar"/' variables.tf
+            git config user.name github-actions
+            git config user.email github-actions@github.com
+            git add variables.tf
+            git commit -m "Update default JAR version in variables.tf"
+            git push
+          else
+            echo "variables.tf not found. Skipping update."
+          fi
 
       - name: Create Release
         if: steps.update-jar.outputs.updated == 'true'

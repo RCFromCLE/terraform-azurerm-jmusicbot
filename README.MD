@@ -11,9 +11,9 @@ This Terraform module deploys JMusicBot on Azure, offering a robust and cost-eff
 [![Build and Test](https://github.com/jagrosh/MusicBot/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/jagrosh/MusicBot/actions/workflows/build-and-test.yml)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/jagrosh/MusicBot)
 
-JmusicBot is a Discord music bot that plays music in voice channels from all kinds of sources (YouTube being the primary). It is a Java application that requires a Linux or Windows machine to run. This module sets up all necessary Azure resources for running JMusicBot, including a Linux VM, Function App, and associated networking resources. The Azure Function dynamically manages the VM lifecycle based on Discord activity, starting the VM when users join the music channel and stopping it when all users leave voice channels. GitHub Actions working together with Terraform Cloud runs keep JMusicBot up-to-date with the latest releases, ensuring your bot is always running the latest version.
+https://github.com/jagrosh/MusicBot
 
-[![update-jar-and-release](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot/actions/workflows/update-jar.yml/badge.svg)](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot/actions/workflows/update-jar.yml)
+JmusicBot is a Discord music bot that plays music in voice channels from all kinds of sources (YouTube being the primary). It is a Java application that requires a Linux or Windows machine to run. This module sets up all necessary Azure resources for running JMusicBot, including a Linux VM, Function App, and associated networking resources. The Azure Function dynamically manages the VM lifecycle based on Discord activity, starting the VM when users join the music channel and stopping it when all users leave voice channels. GitHub Actions working together with Terraform Cloud runs keep JMusicBot up-to-date with the latest releases, ensuring your bot is always running the latest version.
 
 Why Did I Create This Project?
 
@@ -29,6 +29,9 @@ In the future, I plan to add more features to the Azure Function such as top ten
 - **Automated Lifecycle Management**: Utilizes an Azure Function (`jdiscord-function`) to dynamically manage the VM.
   - Starts the VM when users join the music channel.
   - Stops the VM when all users leave voice channels.
+
+  [![update-jar-and-release](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot/actions/workflows/update-jar.yml/badge.svg)](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot/actions/workflows/update-jar.yml)
+
 
 - **Continuous Updates**: Includes a GitHub Actions workflow to keep JMusicBot up-to-date with the latest releases.
 

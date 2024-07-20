@@ -21,6 +21,8 @@ I have been running JMusicBot locally first then I realized that wasn't sustaina
 
 In the future, I plan to add more features to the Azure Function such as top ten songs played, top ten users, also need to automate the discord bot token rotation as Discord has revoked my token due to "abuse suspected" as the bot connected to a server so many times within a short time period. For now, one would need to manually rotate the token in the Terraform Cloud workspace, rerun the workspace, and then restart the Azure Function App.
 
+![Terraform, Github, Azure, logo](images/tf-gh-azure.png)
+
 
 ## Key Features
 

@@ -1,4 +1,4 @@
-name: Update MusicBot JAR
+name: Update MusicBot JAR and Release
 
 on:
   schedule:
@@ -69,14 +69,27 @@ jobs:
             echo "variables.tf not found. Skipping update."
           fi
 
+      - name: Get latest release version
+        id: get_latest_release
+        run: |
+          latest_release=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name || echo "v0.0.0")
+          latest_release=${latest_release#v}  # Remove 'v' prefix if present
+          IFS='.' read -r -a version_parts <<< "$latest_release"
+          new_patch=$((version_parts[2] + 1))
+          new_version="${version_parts[0]}.${version_parts[1]}.$new_patch"
+          echo "::set-output name=new_version::$new_version"
+
       - name: Create Release
         if: steps.update-jar.outputs.updated == 'true'
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ steps.update-jar.outputs.new_version }}
-          release_name: Release ${{ steps.update-jar.outputs.new_version }}
-          body: Updated to JMusicBot version ${{ steps.check-release.outputs.new_version }}
+          tag_name: v${{ steps.get_latest_release.outputs.new_version }}
+          release_name: Release ${{ steps.get_latest_release.outputs.new_version }}
+          body: |
+            Updated to JMusicBot version ${{ steps.check-release.outputs.new_version }}
+            
+            Tag: jmusicbot-update-${{ steps.check-release.outputs.new_version }}
           draft: false
           prerelease: false

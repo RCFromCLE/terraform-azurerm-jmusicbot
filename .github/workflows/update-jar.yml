@@ -1,4 +1,4 @@
-name: Update MusicBot JAR and Release
+name: Update-JAR
 
 on:
   schedule:

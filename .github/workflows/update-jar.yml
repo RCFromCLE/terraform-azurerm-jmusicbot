@@ -10,11 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # Fetch all history for all tags and branches
       
       - name: Get the current repository release version
         id: current-release
         run: |
-          current_version=$(git describe --tags --abbrev=0 | sed 's/^v//' || echo "0.0.0")
+          current_version=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          current_version=${current_version#v}  # Remove 'v' prefix if present
           echo "Current release: $current_version"
           echo "::set-output name=current_version::$current_version"
 
@@ -24,27 +27,26 @@ jobs:
           latest_release=$(curl -s https://api.github.com/repos/jagrosh/MusicBot/releases/latest | jq -r .tag_name)
           echo "Latest release: $latest_release"
           echo "::set-output name=new_version::$latest_release"
-      
+     
       - name: Update JAR file
         id: update-jar
-        if: steps.check-release.outputs.new_version != ''
         run: |
           current_version="${{ steps.current-release.outputs.current_version }}"
-          IFS='.' read -r -a version_parts <<< "$current_version"
-          new_patch=$((version_parts[2] + 1))
-          new_version="${version_parts[0]}.${version_parts[1]}.$new_patch"
-          echo "New version: $new_version"
-          current_latest=$(ls jdiscordmusicbot/JMusicBot-*.jar 2>/dev/null | sort -V | tail -n 1 || echo "")
-          if [ "jdiscordmusicbot/JMusicBot-${{ steps.check-release.outputs.new_version }}.jar" != "$current_latest" ]; then
-            wget https://github.com/jagrosh/MusicBot/releases/download/${{ steps.check-release.outputs.new_version }}/JMusicBot-${{ steps.check-release.outputs.new_version }}.jar -O jdiscordmusicbot/JMusicBot-${{ steps.check-release.outputs.new_version }}.jar
+          latest_version="${{ steps.check-release.outputs.new_version }}"
+          
+          if [ "$latest_version" != "$current_version" ]; then
+            echo "New version available: $latest_version"
+            mkdir -p jdiscordmusicbot
+            wget https://github.com/jagrosh/MusicBot/releases/download/$latest_version/JMusicBot-$latest_version.jar -O jdiscordmusicbot/JMusicBot-$latest_version.jar
             git config user.name github-actions
             git config user.email github-actions@github.com
-            git add jdiscordmusicbot/JMusicBot-${{ steps.check-release.outputs.new_version }}.jar
-            git commit -m "Add JMusicBot version ${{ steps.check-release.outputs.new_version }}"
+            git add jdiscordmusicbot/JMusicBot-$latest_version.jar
+            git commit -m "Add JMusicBot version $latest_version"
             git push
             echo "::set-output name=updated::true"
-            echo "::set-output name=new_version::$new_version"
+            echo "::set-output name=new_version::$latest_version"
           else
+            echo "No new version available. Current version is up to date."
             echo "::set-output name=updated::false"
           fi
 
@@ -66,6 +68,6 @@ jobs:
         with:
           tag_name: v${{ steps.update-jar.outputs.new_version }}
           release_name: Release ${{ steps.update-jar.outputs.new_version }}
-          body: Updated to JMusicBot version ${{ steps.check-release.outputs.new_version }} with tag jmusicbot-new-release
+          body: Updated to JMusicBot version ${{ steps.check-release.outputs.new_version }}
           draft: false
           prerelease: false

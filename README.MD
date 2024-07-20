@@ -4,7 +4,7 @@
 
 ## Introduction
 
-This Terraform module deploys JMusicBot on Azure, offering a robust and cost-effective solution for Discord server owners while serving as an excellent practice project for Azure-Terraform platform engineers. For optimal performance and security, deployment and management via Terraform Cloud is strongly recommended.
+This Terraform module deploys JMusicBot on Azure, offering a robust and cost-effective solution for Discord server owners while serving as an excellent practice project for Azure-Terraform platform engineers. For optimal performance and security, deployment and management of this module via Terraform Cloud is strongly recommended.
 
 ### What is JMusicBot?
 

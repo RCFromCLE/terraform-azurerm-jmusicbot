@@ -195,26 +195,8 @@ This module deploys the following Azure resources:
 - `vm_public_ip`: The public IP address of the deployed VM
 - `function_app_name`: The name of the deployed Azure Function App
 
-## Function App
-
-The config repo includes an Azure Function (`jdiscord-function/index.js`) that manages the VM lifecycle based on Discord activity. 
-
-[![deploy-function](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot-config/actions/workflows/deploy-function.yml/badge.svg)](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot-config/actions/workflows/deploy-function.yml)
-
-The Javascript function:
-
-- Monitors Discord voice channels
-- Starts the VM when users join the music channel
-- Stops the VM when all users leave voice channels
-- Starts the VM when atleast one user is in the music channel
-- Ignores users in the AFK channel
-- Responds to manual "start music bot" commands
-
-Future enhancements include tracking the top ten songs and users, replaying the top ten songs, cost analysis, and cost updates.
-
-### GitHub Action: `update-jar-and-release` from update-jar.yml
-----------------------------------------------
-
+### GitHub Actions Workflows
+`update-jar-and-release` from update-jar.yml
 The GitHub Actions workflow `update-jar-and-release` automates the update process for the `terraform-azurerm-jmusicbot` module in your repository. It checks for new JMusicBot releases, updates the `variables.tf` file with the new version if available, and creates a new release in your repository.
 
 #### Repository
@@ -268,7 +250,25 @@ The GitHub Actions workflow `update-jar-and-release` automates the update proces
         -   Uses the new version tag and release notes indicating the updated JMusicBot version.
 
 The workflow ensures that the `terraform-azurerm-jmusicbot` module always uses the latest version of JMusicBot, updating the configuration file and creating a new release when a new version is detected.
-<br>
+
+### Function App
+
+The config repo includes an Azure Function (`jdiscord-function/index.js`) that manages the VM lifecycle based on Discord activity. 
+
+[![deploy-function](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot-config/actions/workflows/deploy-function.yml/badge.svg)](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot-config/actions/workflows/deploy-function.yml)
+
+The Javascript function:
+
+- Monitors Discord voice channels
+- Starts the VM when users join the music channel
+- Stops the VM when all users leave voice channels
+- Starts the VM when atleast one user is in the music channel
+- Ignores users in the AFK channel
+- Responds to manual "start music bot" commands
+
+Future enhancements include tracking the top ten songs and users, replaying the top ten songs, cost analysis, and cost updates.
+
+
 ## Configuration Repository
 
 For detailed setup instructions and a complete configuration example, refer to the [terraform-azurerm-jmusicbot-config](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot-config) repository.

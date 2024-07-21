@@ -124,7 +124,7 @@ variable "remove_tfjdiscord_command" {
 variable "repo_url" {
   type        = string
   description = "The URL of the GitHub repository."
-  default     = "https://github.com/RCFromCLE/tf-jdiscord.git"
+  default     = "https://github.com/RCFromCLE/terraform-azurerm-jmusicbot.git"
 }
 
 variable "jar_path" {

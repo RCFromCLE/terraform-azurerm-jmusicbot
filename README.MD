@@ -14,7 +14,7 @@ JMusicBot is an open-source Discord music bot that plays music in voice channels
 
 ### Project Origin
 
-Initially running JMusicBot locally, I found it unsustainable as the bot went offline whenever I did. I moved to Azure with a standard B1 VM, which worked for a while but cost $20-30 per month. To reduce costs, I implemented an Azure Function to start and stop the VM based on user activity in the music channel, lowering the cost to zero when the bot was not in use. I then automated updates using GitHub Actions and Terraform Cloud. This project aims to provide a fully automated solution for running JMusicBot on Azure with minimal cost and maintenance, and to serve as a practical project for learning Azure, Terraform, and GitHub Actions.
+Initially running JMusicBot locally, I found it unsustainable as the bot went offline whenever I did. I moved to Azure with a standard B1ms VM, which worked for a while but cost $20-30 per month. To reduce costs, I implemented an Azure Function to start and stop the VM based on user activity in the music channel, lowering the cost to zero when the bot was not in use. I then automated updates using GitHub Actions and Terraform Cloud. This project aims to provide a fully automated solution for running JMusicBot on Azure with minimal cost and maintenance, and to serve as a practical project for learning Azure, Terraform, and GitHub Actions.
 
 Future enhancements include adding features such as tracking the top ten songs and users, and automating the Discord bot token rotation to address issues of token revocation due to suspected abuse. Currently, token rotation must be done manually in the Terraform Cloud workspace.
 
@@ -68,6 +68,7 @@ To use this module, you'll need:
    - GitHub Actions
    - Terraform - HashiCorp
    - HCP - Terraform
+
 9. **Configuration Repository**: A forked copy of the [terraform-azurerm-jmusicbot-config](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot-config) repository for managing the infrastructure configuration.
 
 Ensure all these components are set up before attempting to deploy the module. Refer to the configuration repository for detailed setup instructions.

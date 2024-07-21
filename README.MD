@@ -115,7 +115,7 @@ terraform {
 ```hcl
 "jmusicbot" {
   source  = "RCFromCLE/jmusicbot/azure"
-  version = "2.0.0"
+  version = "latest_jmusicbot_module_version_here"
 
   # Required variables
   azure_tenant_id     = var.azure_tenant_id

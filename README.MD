@@ -21,9 +21,9 @@ JMusicBot is an open-source Discord music bot that plays music in voice channels
 
 ### Project Origin
 
-Initially running JMusicBot locally, I found it unsustainable as the bot went offline whenever I did. I moved to Azure with a standard B1ms VM, which worked for a while but cost $20-30 per month. To reduce costs, I implemented an Azure Function to start and stop the VM based on user activity in the music channel, lowering the cost to zero when the bot was not in use. I then automated updates using GitHub Actions and Terraform Cloud. This project aims to provide a fully automated solution for running JMusicBot on Azure with minimal cost and maintenance, and to serve as a practical project for learning Azure, Terraform, and GitHub Actions.
+Initially running JMusicBot locally, I found it unsustainable as the bot went offline whenever I did. I moved to Azure with a standard B1ms VM, which worked for a while but cost $20-30 per month. To reduce costs, I implemented an Azure Function to start and stop the VM based on user activity in the music channel, lowering the cost to zero when the bot was not in use. I then automated updates using GitHub Actions and Terraform Cloud. This project aims to provide a fully automated solution for running JMusicBot on Azure with minimal cost and maintenance and to serve as a practical project for learning Azure, Terraform, and GitHub Actions.
 
-Future enhancements include adding features such as tracking the top ten songs and users, and automating the Discord bot token rotation to address issues of token revocation due to suspected abuse. Currently, token rotation must be done manually in the Terraform Cloud workspace.
+Future enhancements include adding features such as tracking the top ten songs and users and automating the Discord bot token rotation to address issues of token revocation due to suspected abuse. Currently, token rotation must be done manually in the Terraform Cloud workspace.
 
 ### Key Features
 
@@ -33,7 +33,7 @@ Future enhancements include adding features such as tracking the top ten songs a
   - Stops the VM when all users leave voice channels.
   - Starts the VM when at least one user is in the music channel.
   - Ignores users in the AFK channel.
-  - Responds to manual "start music bot" commands.
+  - Respond to manual "start music bot" commands.
 - **Continuous Updates**: Includes a GitHub Actions workflow to keep JMusicBot up-to-date with the latest releases.
 
   [![update-jar-and-release](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot/actions/workflows/update-jar.yml/badge.svg)](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot/actions/workflows/update-jar.yml)
@@ -51,7 +51,7 @@ Future enhancements include adding features such as tracking the top ten songs a
 To use this module, you'll need:
 
 1. **Azure Subscription**: An active Azure subscription with sufficient permissions to create resources. A new subscription is recommended for this project, but you can use an existing subscription with the necessary custom permissions for the service principal.
-2. **Terraform**: Version 0.12 or later installed on your local machine.
+2. **Terraform**: Version 0.12 or later installed on your local machine. [Setup Terraform on Windows](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli)
 3. **Terraform Cloud Account**: For state management, secure variable storage, and update workflows. Sign up for a free account at [Terraform Cloud](https://app.terraform.io/signup/account).
 4. **Azure Service Principal**: An Azure registered application and secret with contributor access to your JDiscordBot created or existing Azure subscription. 
 The following information is required:

@@ -230,7 +230,7 @@ For detailed setup instructions and a complete configuration example, refer to t
 
 - This module is designed to run within a Terraform Cloud workspace in concert with the jdiscord-kv workspace. See the configuration repository for detailed setup instructions.
 - Ensure your Azure service principal has the necessary permissions  (owner over your musicbot subscription) to create resources.
-- See configuration repository action called "Check for Module Update and TF Apply" for how to apply the new release created by update-jar action
+- See configuration repository action called "Check for Module Update and TF Apply" for how to apply the new release created by update-jar-and-release action
 - Keep sensitive variables secure in Terraform Cloud or `terraform.tfvars` never in variables.tf as it could be exposed in the GitHub repository.
 - Forking this module is not necessary unless you have specific security requirements
 

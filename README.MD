@@ -150,7 +150,7 @@ terraform {
 
 3. Provide values for the required variables in your Terraform Cloud workspace or `terraform.tfvars` file. You can use set_workspace_variable.ps1 to set the variables in the TF Cloud Workspace. Simply fill out your Terraform API token, place the script in the same directory as terraform.tfvars and run the script.
 
-## Resources Deployed
+##  Resources Deployed
 
 This module deploys the following Azure resources:
 
@@ -286,7 +286,7 @@ For detailed setup instructions and a complete configuration example, refer to t
 
 - Ensure your Azure service principal has the necessary permissions  (contributor over your musicbot subscription) to create resources.
 - See configuration repository action called "Check for Module Update and TF Apply" for how to apply the new release created by update-jar-and-release action
-- Keep sensitive variables secure in Terraform Cloud or `terraform.tfvars` never in variables.tf as it could be exposed in the GitHub repository.
+- Keep sensitive variables secure in Terraform Cloud or `terraform.tfvars` never in `variables.tf` as it could be exposed in the GitHub repository.
 - Forking this module is not necessary unless you have specific security requirements
 
 ### Contributing

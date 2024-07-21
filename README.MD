@@ -33,8 +33,10 @@ Future enhancements include adding features such as tracking the top ten songs a
   [![update-jar-and-release](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot/actions/workflows/update-jar.yml/badge.svg)](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot/actions/workflows/update-jar.yml)
 
 
-- **Fully Automated Deployment**: When using the configuration repository, the "Check for Module Update and TF Apply" action can automatically apply new releases created by the update-jar-and-release action.
+- **Fully Automated Deployment**: When using the configuration repository, the "Check for Module Update and TF Apply" action can automatically apply new releases created by the update-jar-and-release action. There is also a GH Action to deploy the function app in the configuration repository.
 [![Check for Module Update and TF Apply](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot-config/actions/workflows/trigger-terraform-apply.yml/badge.svg)](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot-config/actions/workflows/trigger-terraform-apply.yml)
+[![deploy-function](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot-config/actions/workflows/deploy-function.yml/badge.svg)](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot-config/actions/workflows/deploy-function.yml)
+
 
 - **Secure Configuration**: Sensitive variables are stored securely in Terraform Cloud or `terraform.tfvars` Key Vault, and GitHub Actions secrets. See configuration repository for how we use an Azure Key Vault, Terraform Cloud workspace variables, variable sets, and GitHub Actions secrets to secure sensitive information used in this project.
 

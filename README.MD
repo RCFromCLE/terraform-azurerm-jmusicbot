@@ -1,5 +1,10 @@
 # terraform-azurerm-jmusicbot
 
+  [![update-jar-and-release](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot/actions/workflows/update-jar.yml/badge.svg)](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot/actions/workflows/update-jar.yml)
+ [![Check for Module Update and TF Apply](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot-config/actions/workflows/trigger-terraform-apply.yml/badge.svg)](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot-config/actions/workflows/trigger-terraform-apply.yml)
+[![deploy-function](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot-config/actions/workflows/deploy-function.yml/badge.svg)](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot-config/actions/workflows/deploy-function.yml)
+
+
 ![Terraform, GitHub, Azure, logo](images/tf-gh-azure.png)
 
 ## Introduction
@@ -20,7 +25,7 @@ Initially running JMusicBot locally, I found it unsustainable as the bot went of
 
 Future enhancements include adding features such as tracking the top ten songs and users, and automating the Discord bot token rotation to address issues of token revocation due to suspected abuse. Currently, token rotation must be done manually in the Terraform Cloud workspace.
 
-## Key Features
+### Key Features
 
 - **Complete Infrastructure**: Sets up all necessary Azure resources for running JMusicBot.
 - **Automated Lifecycle Management**: Utilizes an Azure Function (`jdiscord-function`) to dynamically manage the VM.
@@ -41,7 +46,7 @@ Future enhancements include adding features such as tracking the top ten songs a
 - **Cost-Effective**: Utilizes serverless computing with Azure Functions. The consumption-based pricing model ensures you only pay for what you use, and your first 1 million requests are free. This solution will never come close to that limit, resulting in zero cost for the Azure Function.
 - **Real-World Application**: Combines Infrastructure as Code, an open-source Java app, serverless computing, and CI/CD practices in a practical project.
 
-## Requirements
+### Requirements
 
 To use this module, you'll need:
 
@@ -76,11 +81,11 @@ The following information is required:
 
 Ensure all these components are set up before attempting to deploy the module. Refer to the configuration repository for detailed setup instructions.
 
-## Usage
+### Usage
 
 **Attention**: This module is designed to run within a Terraform Cloud workspace in concert with the jdiscord-kv workspace. See the configuration repository [terraform-azurerm-jmusicbot-config](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot-config) for detailed setup instructions.
 
-1. Configure Terraform Cloud in your configuration:
+1. Configure Terraform Cloud block iin your main.tf files:
 
 ```hcl
 terraform {
@@ -103,12 +108,14 @@ terraform {
 }
 ```
 
-2. In your Terraform configuration, reference this module:
+2. In your Terraform configuration, reference the [Terraform Registry page](https://registry.terraform.io/modules/RCFromCLE/jmusicbot/azure/latest) for this module. 
+
+  - Below is an example configuration:
 
 ```hcl
 "jmusicbot" {
   source  = "RCFromCLE/jmusicbot/azure"
-  version = "1.3.6"
+  version = "1.3.7"
 
   # Required variables
   azure_tenant_id     = var.azure_tenant_id
@@ -160,7 +167,7 @@ This module deploys the following Azure resources:
 11. **Application Insights**: Provides monitoring for the Function App
 12. **Function App**: Hosts the Node.js function that manages VM lifecycle
 
-## Variables
+### Variables
 
 | Variable | Type | Description | Default |
 |----------|------|-------------|---------|
@@ -190,68 +197,70 @@ This module deploys the following Azure resources:
 | `vm_admin_username` | string | The admin username for the VM | "rc" |
 | `discord_bot_prefix` | string | The command prefix for the Discord bot | "!" |
 
-## Outputs
 
-- `vm_public_ip`: The public IP address of the deployed VM
-- `function_app_name`: The name of the deployed Azure Function App
+Certainly, I'll reformat the content to make it easier to read and follow using markdown. Here's the improved version:
 
-### GitHub Actions Workflows
-`update-jar-and-release` from update-jar.yml
-The GitHub Actions workflow `update-jar-and-release` automates the update process for the `terraform-azurerm-jmusicbot` module in your repository. It checks for new JMusicBot releases, updates the `variables.tf` file with the new version if available, and creates a new release in your repository.
+## GitHub Actions Workflow: update-jar-and-release
 
-#### Repository
+#### Overview
+This workflow automates the update process for the `terraform-azurerm-jmusicbot` module. It checks for new JMusicBot releases, updates the `variables.tf` file if a new version is available, and creates a new release in the repository.
 
--   **Target Repository**: `https://github.com/jagrosh/MusicBot`
+#### Workflow Details
+
+###### File: `update-jar.yml`
 
 #### Triggers
-
--   **Scheduled Run**: Executes daily at 5 AM EST (`0 10 * * *`).
--   **Manual Run**: Can be triggered manually (`workflow_dispatch`).
+- **Scheduled**: Daily at 5 AM EST (`0 10 * * *`)
+- **Manual**: Can be triggered via `workflow_dispatch`
 
 #### Job: check-and-update-jar
-
--   **Runs on**: `ubuntu-latest`
+**Runs on**: `ubuntu-latest`
 
 #### Steps
 
-1.  **Checkout Repository**:
+1. **Checkout Repository**
+   - Action: `actions/checkout@v2`
+   - Clones the `terraform-azurerm-jmusicbot` repository with full history
 
-    -   Clones the `terraform-azurerm-jmusicbot` repository with full history using `actions/checkout@v2`.
-2.  **Get Current Version from variables.tf**:
+2. **Get Current Version from variables.tf**
+   - Extracts current JMusicBot version from `variables.tf`
+   - Output: `current_version`
 
-    -   Extracts the current JMusicBot version from `variables.tf` using `grep` and `sed`.
-    -   Stores the extracted version in a GitHub Actions output variable `current_version`.
-3.  **Check for New MusicBot Release**:
+3. **Check for New MusicBot Release**
+   - Fetches latest JMusicBot release version from GitHub API
+   - Output: `new_version`
 
-    -   Fetches the latest JMusicBot release version from `https://github.com/jagrosh/MusicBot` using GitHub's API.
-    -   Stores the latest release version in a GitHub Actions output variable `new_version`.
-4.  **Update JAR File**:
+4. **Update JAR File**
+   - Compares `current_version` with `new_version`
+   - If new version found:
+     - Updates `variables.tf` with new version
+     - Configures Git user settings
+     - Commits and pushes changes
+     - Sets `updated` to `true`
+   - If no new version:
+     - Sets `updated` to `false`
 
-    -   Compares `current_version` with `new_version`.
-    -   If a new version is found:
-        -   Updates the `variables.tf` file with the new JMusicBot version.
-        -   Configures Git user settings.
-        -   Commits the change to `variables.tf` and pushes it to the repository.
-        -   Sets an output variable `updated` to `true`.
-    -   If no new version is found:
-        -   Sets an output variable `updated` to `false`.
-5.  **Exit if No New Release Found**:
+5. **Exit if No New Release Found**
+   - Exits workflow if `updated` is `false`
 
-    -   If `updated` is `false`, prints a message and exits the workflow.
-6.  **Get Latest Release Version**:
+6. **Get Latest Release Version**
+   - Retrieves latest release version from `terraform-azurerm-jmusicbot` repo
+   - Increments patch version (e.g., `v1.2.3` to `v1.2.4`)
+   - Output: `new_version`
 
-    -   Retrieves the latest release version from the `terraform-azurerm-jmusicbot` repository.
-    -   Increments the patch version (e.g., from `v1.2.3` to `v1.2.4`).
-    -   Stores the incremented version in an output variable `new_version`.
-7.  **Create Release**:
+7. **Create Release**
+   - If `updated` is `true`:
+     - Creates new release in `terraform-azurerm-jmusicbot` repo
+     - Uses new version tag
+     - Includes release notes with updated JMusicBot version
 
-    -   If `updated` is `true`:
-        -   Creates a new release in the `terraform-azurerm-jmusicbot` repository.
-        -   Uses the new version tag and release notes indicating the updated JMusicBot version.
+#### Target Repository
+https://github.com/jagrosh/JMusicBot
 
-The workflow ensures that the `terraform-azurerm-jmusicbot` module always uses the latest version of JMusicBot, updating the configuration file and creating a new release when a new version is detected.
+#### Outcome
+This workflow ensures the `terraform-azurerm-jmusicbot` module always uses the latest version of JMusicBot by automatically updating the configuration file and creating a new release when a new version is detected.
 
-### Function App
+## Function App
 
 The config repo includes an Azure Function (`jdiscord-function/index.js`) that manages the VM lifecycle based on Discord activity. 
 
@@ -269,19 +278,17 @@ The Javascript function:
 Future enhancements include tracking the top ten songs and users, replaying the top ten songs, cost analysis, and cost updates.
 
 
-## Configuration Repository
+### Configuration Repository
 
 For detailed setup instructions and a complete configuration example, refer to the [terraform-azurerm-jmusicbot-config](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot-config) repository.
 
-## Notes
+### Notes
 
 - Ensure your Azure service principal has the necessary permissions  (contributor over your musicbot subscription) to create resources.
 - See configuration repository action called "Check for Module Update and TF Apply" for how to apply the new release created by update-jar-and-release action
 - Keep sensitive variables secure in Terraform Cloud or `terraform.tfvars` never in variables.tf as it could be exposed in the GitHub repository.
 - Forking this module is not necessary unless you have specific security requirements
 
-[Terraform Registry page](https://registry.terraform.io/modules/RCFromCLE/jmusicbot/azure/latest) for this module.
-
-## Contributing
+### Contributing
 
 Contributions are welcome! Please submit pull requests with any enhancements or bug fixes.

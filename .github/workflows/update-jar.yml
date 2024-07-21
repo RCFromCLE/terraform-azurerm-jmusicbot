@@ -2,7 +2,7 @@ name: update-jar-and-release
 
 on:
   schedule:
-    - cron: '0 5 * * *'  # Run daily at 5 AM UTC
+    - cron: '0 10 * * *'  # Run daily at 5 AM UTC
   workflow_dispatch:  # Allow manual triggers
 
 jobs:
@@ -13,19 +13,12 @@ jobs:
         with:
           fetch-depth: 0  # Fetch all history for all tags and branches
       
-      - name: Check for existing JAR and get current version
-        id: current-jar
+      - name: Get current version from variables.tf
+        id: current-version
         run: |
-          mkdir -p jdiscordmusicbot
-          current_jar=$(ls jdiscordmusicbot/JMusicBot-*.jar 2>/dev/null | sort -V | tail -n 1 || echo "")
-          if [ -z "$current_jar" ]; then
-            echo "No existing JAR found."
-            echo "current_version=0.0.0" >> $GITHUB_OUTPUT
-          else
-            current_version=$(echo "$current_jar" | sed -n 's/.*JMusicBot-\(.*\)\.jar/\1/p')
-            echo "Current JAR version: $current_version"
-            echo "current_version=$current_version" >> $GITHUB_OUTPUT
-          fi
+          current_version=$(grep 'default.*JMusicBot-' variables.tf | sed -n 's/.*JMusicBot-\(.*\)\.jar.*/\1/p')
+          echo "Current version in variables.tf: $current_version"
+          echo "current_version=$current_version" >> $GITHUB_OUTPUT
 
       - name: Check for new MusicBot release
         id: check-release
@@ -37,41 +30,23 @@ jobs:
       - name: Update JAR file
         id: update-jar
         run: |
-          current_version="${{ steps.current-jar.outputs.current_version }}"
+          current_version="${{ steps.current-version.outputs.current_version }}"
           latest_version="${{ steps.check-release.outputs.new_version }}"
           
           if [ "$latest_version" != "$current_version" ]; then
             echo "New version available: $latest_version"
-            wget https://github.com/jagrosh/MusicBot/releases/download/$latest_version/JMusicBot-$latest_version.jar -O jdiscordmusicbot/JMusicBot-$latest_version.jar
+            # Update variables.tf
+            sed -i 's/default\s*=\s*"JMusicBot-.*\.jar"/default = "JMusicBot-'$latest_version'.jar"/' variables.tf
             git config user.name github-actions
             git config user.email github-actions@github.com
-            git add jdiscordmusicbot/JMusicBot-$latest_version.jar
-            git commit -m "Add JMusicBot version $latest_version"
+            git add variables.tf
+            git commit -m "Update JMusicBot version to $latest_version in variables.tf"
             git push
             echo "updated=true" >> $GITHUB_OUTPUT
             echo "new_version=$latest_version" >> $GITHUB_OUTPUT
           else
             echo "No new version available. Current version is up to date."
             echo "updated=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Update variables.tf
-        if: steps.update-jar.outputs.updated == 'true'
-        run: |
-          if [ -f variables.tf ]; then
-            if grep -q "default\s*=\s*\"JMusicBot-${{ steps.check-release.outputs.new_version }}.jar\"" variables.tf; then
-              echo "variables.tf already contains the latest version. No update needed."
-            else
-              sed -i 's/default\s*=\s*"JMusicBot-.*\.jar"/default = "JMusicBot-${{ steps.check-release.outputs.new_version }}.jar"/' variables.tf
-              git config user.name github-actions
-              git config user.email github-actions@github.com
-              git add variables.tf
-              git commit -m "Update default JAR version in variables.tf"
-              git push
-              echo "variables.tf updated successfully."
-            fi
-          else
-            echo "variables.tf not found. Skipping update."
           fi
 
       - name: Exit if no new release found

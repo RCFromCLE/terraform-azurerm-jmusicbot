@@ -2,7 +2,7 @@ name: update-jar-and-release
 
 on:
   schedule:
-    - cron: '0 10 * * *'  # Run daily at 5 AM UTC
+    - cron: '0 10 * * *'  # Run daily at 5 AM EST
   workflow_dispatch:  # Allow manual triggers
 
 jobs:

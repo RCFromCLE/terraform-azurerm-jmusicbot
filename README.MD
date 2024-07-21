@@ -212,15 +212,63 @@ The Javascript function:
 
 Future enhancements include tracking the top ten songs and users, replaying the top ten songs, cost analysis, and cost updates.
 
-## Automated Updates
+### GitHub Action: `update-jar-and-release` from update-jar.yml
+----------------------------------------------
 
-The module includes a GitHub Actions workflow (`update-jar.yml`) that:
+The GitHub Actions workflow `update-jar-and-release` automates the update process for the `terraform-azurerm-jmusicbot` module in your repository. It checks for new JMusicBot releases, updates the `variables.tf` file with the new version if available, and creates a new release in your repository.
 
-- Checks daily @ 5 AM EST for new JMusicBot releases
-- Updates the JAR file when a new version is available
-- Updates the `variables.tf` file with the new JAR version
-- Creates a new release in the repository
+#### Repository
 
+-   **Target Repository**: `https://github.com/jagrosh/MusicBot`
+
+#### Triggers
+
+-   **Scheduled Run**: Executes daily at 5 AM EST (`0 10 * * *`).
+-   **Manual Run**: Can be triggered manually (`workflow_dispatch`).
+
+#### Job: check-and-update-jar
+
+-   **Runs on**: `ubuntu-latest`
+
+#### Steps
+
+1.  **Checkout Repository**:
+
+    -   Clones the `terraform-azurerm-jmusicbot` repository with full history using `actions/checkout@v2`.
+2.  **Get Current Version from variables.tf**:
+
+    -   Extracts the current JMusicBot version from `variables.tf` using `grep` and `sed`.
+    -   Stores the extracted version in a GitHub Actions output variable `current_version`.
+3.  **Check for New MusicBot Release**:
+
+    -   Fetches the latest JMusicBot release version from `https://github.com/jagrosh/MusicBot` using GitHub's API.
+    -   Stores the latest release version in a GitHub Actions output variable `new_version`.
+4.  **Update JAR File**:
+
+    -   Compares `current_version` with `new_version`.
+    -   If a new version is found:
+        -   Updates the `variables.tf` file with the new JMusicBot version.
+        -   Configures Git user settings.
+        -   Commits the change to `variables.tf` and pushes it to the repository.
+        -   Sets an output variable `updated` to `true`.
+    -   If no new version is found:
+        -   Sets an output variable `updated` to `false`.
+5.  **Exit if No New Release Found**:
+
+    -   If `updated` is `false`, prints a message and exits the workflow.
+6.  **Get Latest Release Version**:
+
+    -   Retrieves the latest release version from the `terraform-azurerm-jmusicbot` repository.
+    -   Increments the patch version (e.g., from `v1.2.3` to `v1.2.4`).
+    -   Stores the incremented version in an output variable `new_version`.
+7.  **Create Release**:
+
+    -   If `updated` is `true`:
+        -   Creates a new release in the `terraform-azurerm-jmusicbot` repository.
+        -   Uses the new version tag and release notes indicating the updated JMusicBot version.
+
+The workflow ensures that the `terraform-azurerm-jmusicbot` module always uses the latest version of JMusicBot, updating the configuration file and creating a new release when a new version is detected.
+<br>
 ## Configuration Repository
 
 For detailed setup instructions and a complete configuration example, refer to the [terraform-azurerm-jmusicbot-config](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot-config) repository.

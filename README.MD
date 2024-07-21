@@ -195,7 +195,7 @@ The config repo includes an Azure Function (`jdiscord-function/index.js`) that m
 
 [![deploy-function](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot-config/actions/workflows/deploy-function.yml/badge.svg)](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot-config/actions/workflows/deploy-function.yml)
 
-It:
+The Javascript function:
 
 - Monitors Discord voice channels
 - Starts the VM when users join the music channel

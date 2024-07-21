@@ -271,7 +271,7 @@ The Javascript function:
 - Monitors Discord voice channels
 - Starts the VM when users join the music channel
 - Stops the VM when all users leave voice channels
-- Starts the VM when atleast one user is in the music channel
+- Starts the VM when at least one user is in the music channel
 - Ignores users in the AFK channel
 - Responds to manual "start music bot" commands
 
@@ -284,8 +284,8 @@ For detailed setup instructions and a complete configuration example, refer to t
 
 ### Notes
 
-- Ensure your Azure service principal has the necessary permissions  (contributor over your musicbot subscription) to create resources.
-- See configuration repository action called "Check for Module Update and TF Apply" for how to apply the new release created by update-jar-and-release action
+- Ensure your Azure service principal has the necessary permissions  (contributor over your JMusicBot subscription) to create resources.
+- See the configuration repository action called "Check for Module Update and TF Apply" for how to apply the new release created by update-jar-and-release action
 - Keep sensitive variables secure in Terraform Cloud or `terraform.tfvars` never in `variables.tf` as it could be exposed in the GitHub repository.
 - Forking this module is not necessary unless you have specific security requirements
 

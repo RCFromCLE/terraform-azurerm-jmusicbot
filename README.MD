@@ -6,6 +6,8 @@
 
 This Terraform module deploys JMusicBot on Azure, offering a robust and cost-effective solution for Discord server owners while serving as an excellent practice project for Azure-Terraform platform engineers. For optimal performance and security, deployment and management of this module via Terraform Cloud is strongly recommended.
 
+If deploying, start with the configuration repo here - [terraform-azurerm-jmusicbot-config](https://github.com/RCFromCLE/terraform-azurerm-jmusicbot-config).
+
 ### What is JMusicBot?
 
 ![JMusicBot Logo](images/jmusicbot.png)
@@ -46,7 +48,8 @@ To use this module, you'll need:
 1. **Azure Subscription**: An active Azure subscription with sufficient permissions to create resources. A new subscription is recommended for this project, but you can use an existing subscription with the necessary custom permissions for the service principal.
 2. **Terraform**: Version 0.12 or later installed on your local machine.
 3. **Terraform Cloud Account**: For state management, secure variable storage, and update workflows. Sign up for a free account at [Terraform Cloud](https://app.terraform.io/signup/account).
-4. **Azure Service Principal**: An Azure AD application and service principal with owner access to your Azure subscription. The following information is required:
+4. **Azure Service Principal**: An Azure registered application and secret with contributor access to your JDiscordBot created or existing Azure subscription. 
+The following information is required:
    - Client ID
    - Client Secret
    - Tenant ID
@@ -224,7 +227,7 @@ For detailed setup instructions and a complete configuration example, refer to t
 
 ## Notes
 
-- Ensure your Azure service principal has the necessary permissions  (owner over your musicbot subscription) to create resources.
+- Ensure your Azure service principal has the necessary permissions  (contributor over your musicbot subscription) to create resources.
 - See configuration repository action called "Check for Module Update and TF Apply" for how to apply the new release created by update-jar-and-release action
 - Keep sensitive variables secure in Terraform Cloud or `terraform.tfvars` never in variables.tf as it could be exposed in the GitHub repository.
 - Forking this module is not necessary unless you have specific security requirements

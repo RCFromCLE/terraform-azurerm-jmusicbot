@@ -1,10 +1,8 @@
 name: update-jar-and-release
-
 on:
   schedule:
     - cron: '0 10 * * *'  # Run daily at 5 AM EST
   workflow_dispatch:  # Allow manual triggers
-
 jobs:
   check-and-update-jar:
     runs-on: ubuntu-latest
@@ -12,7 +10,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0  # Fetch all history for all tags and branches
-      
+     
       - name: Get current version from variables.tf
         id: current-version
         run: |
@@ -32,8 +30,8 @@ jobs:
         run: |
           current_version="${{ steps.current-version.outputs.current_version }}"
           latest_version="${{ steps.check-release.outputs.new_version }}"
-          
-          if [ "$latest_version" != "$current_version" ]; then
+         
+          if [ "$latest_version" != "$current_version" ] && [ "$latest_version" != "null" ]; then
             echo "New version available: $latest_version"
             # Update variables.tf
             sed -i 's/default\s*=\s*"JMusicBot-.*\.jar"/default = "JMusicBot-'$latest_version'.jar"/' variables.tf
@@ -45,25 +43,29 @@ jobs:
             echo "updated=true" >> $GITHUB_OUTPUT
             echo "new_version=$latest_version" >> $GITHUB_OUTPUT
           else
-            echo "No new version available. Current version is up to date."
+            echo "No new version available or unable to fetch latest version. Current version is up to date."
             echo "updated=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Exit if no new release found
-        if: steps.update-jar.outputs.updated == 'false'
+      - name: Get next version number
+        id: get_next_version
+        if: steps.update-jar.outputs.updated == 'true'
         run: |
-          echo "No new JMusicBot version found. Exiting workflow."
-          exit 0
-
-      - name: Get latest release version
-        id: get_latest_release
-        run: |
-          latest_release=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name || echo "v0.0.0")
-          latest_release=${latest_release#v}  # Remove 'v' prefix if present
-          IFS='.' read -r -a version_parts <<< "$latest_release"
-          new_patch=$((version_parts[2] + 1))
-          new_version="${version_parts[0]}.${version_parts[1]}.$new_patch"
-          echo "new_version=$new_version" >> $GITHUB_OUTPUT
+          # Get all tags, sort them, and get the latest one
+          latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          
+          # Remove 'v' prefix if present
+          latest_version=${latest_tag#v}
+          
+          # Split the version into parts
+          IFS='.' read -r -a version_parts <<< "$latest_version"
+          
+          # Increment the patch version
+          new_patch=$((${version_parts[2]:-0} + 1))
+          new_version="${version_parts[0]:-0}.${version_parts[1]:-0}.$new_patch"
+          
+          echo "Next version: v$new_version"
+          echo "next_version=v$new_version" >> $GITHUB_OUTPUT
 
       - name: Create Release
         if: steps.update-jar.outputs.updated == 'true'
@@ -71,9 +73,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ steps.get_latest_release.outputs.new_version }}
-          release_name: Release ${{ steps.get_latest_release.outputs.new_version }}
+          tag_name: ${{ steps.get_next_version.outputs.next_version }}
+          release_name: Release ${{ steps.get_next_version.outputs.next_version }}
           body: |
-            Updated to JMusicBot version ${{ steps.check-release.outputs.new_version }}
+            Updated to JMusicBot version ${{ steps.update-jar.outputs.new_version }}
           draft: false
           prerelease: false

@@ -2,7 +2,7 @@ name: update-jar-and-release
 on:
   schedule:
     - cron: '0 10 * * *'  # Run daily at 5 AM EST
-  workflow_dispatch:  # Allow manual triggers
+  workflow_dispatch:  # Allow manual triggering
 jobs:
   check-and-update-jar:
     runs-on: ubuntu-latest

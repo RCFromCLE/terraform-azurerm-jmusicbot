@@ -130,7 +130,7 @@ variable "repo_url" {
 variable "jar_path" {
   type        = string
   description = "The path to the JMusicBot JAR file."
-  default = "JMusicBot-null.jar"
+  default = "JMusicBot-0.4.3.jar"
 }
 
 variable "discord_bot_token" {

@@ -39,9 +39,24 @@ jobs:
             git config user.email github-actions@github.com
             git add variables.tf
             git commit -m "Update JMusicBot version to $latest_version in variables.tf"
-            git push
-            echo "updated=true" >> $GITHUB_OUTPUT
-            echo "new_version=$latest_version" >> $GITHUB_OUTPUT
+            
+            # Fetch the latest changes
+            git fetch origin master
+            
+            # Attempt to rebase
+            if git rebase origin/master; then
+              # If rebase is successful, force push the changes
+              git push --force-with-lease
+              echo "updated=true" >> $GITHUB_OUTPUT
+              echo "new_version=$latest_version" >> $GITHUB_OUTPUT
+            else
+              # If rebase fails, undo the changes and exit
+              git rebase --abort
+              git reset --hard origin/master
+              echo "Failed to update due to conflicts. Please check the repository manually."
+              echo "updated=false" >> $GITHUB_OUTPUT
+              exit 1
+            fi
           else
             echo "No new version available or unable to fetch latest version. Current version is up to date."
             echo "updated=false" >> $GITHUB_OUTPUT

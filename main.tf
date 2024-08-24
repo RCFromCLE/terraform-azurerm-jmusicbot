@@ -135,8 +135,49 @@ data "azurerm_public_ip" "vm_ip" {
   name                = azurerm_public_ip.public_ip.name
   resource_group_name = azurerm_resource_group.rg1.name
 }
-resource "azurerm_virtual_machine_extension" "run_jdiscordbot" {
-  name                 = "run_jdiscordbot"
+# Data source to fetch latest release information
+data "http" "latest_release" {
+  url = "https://api.github.com/repos/jagrosh/MusicBot/releases/latest"
+
+  request_headers = {
+    Accept = "application/vnd.github.v3+json"
+  }
+}
+
+locals {
+  latest_version = jsondecode(data.http.latest_release.body).tag_name
+  jar_filename   = "JMusicBot-${local.latest_version}.jar"
+  download_url   = "https://github.com/jagrosh/MusicBot/releases/download/${local.latest_version}/${local.jar_filename}"
+}
+
+# Create a storage account
+resource "azurerm_storage_account" "jmusicbot_storage" {
+  name                     = "jmusicbotstorage${random_string.suffix.result}"
+  resource_group_name      = azurerm_resource_group.rg1.name
+  location                 = azurerm_resource_group.rg1.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+}
+
+# Create a container in the storage account
+resource "azurerm_storage_container" "jmusicbot_container" {
+  name                  = "jmusicbot-files"
+  storage_account_name  = azurerm_storage_account.jmusicbot_storage.name
+  container_access_type = "private"
+}
+
+# Upload the JAR file to the storage account
+resource "azurerm_storage_blob" "jmusicbot_jar" {
+  name                   = local.jar_filename
+  storage_account_name   = azurerm_storage_account.jmusicbot_storage.name
+  storage_container_name = azurerm_storage_container.jmusicbot_container.name
+  type                   = "Block"
+  source_uri             = local.download_url
+}
+
+# VM extension to set up JMusicBot
+resource "azurerm_virtual_machine_extension" "setup_jmusicbot" {
+  name                 = "setup_jmusicbot"
   virtual_machine_id   = azurerm_linux_virtual_machine.vm1.id
   publisher            = "Microsoft.Azure.Extensions"
   type                 = "CustomScript"
@@ -147,115 +188,64 @@ resource "azurerm_virtual_machine_extension" "run_jdiscordbot" {
 #!/bin/bash
 set -e
 
-# Enable error logging
-exec 2>/tmp/vm_extension_error.log
+echo "Starting JMusicBot setup..."
 
-echo "Starting JDiscordBot setup script..."
+# Install Azure CLI
+curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
-# Use the jar_path variable passed from Terraform
-JAR_FILE="${var.jar_path}"
-
-# Update and install dependencies
-export DEBIAN_FRONTEND=noninteractive
+# Install Java
 sudo apt-get update
-sudo apt-get install -y default-jdk curl
+sudo apt-get install -y default-jre
 
-echo "Java installed successfully."
+# Create directory for JMusicBot
+sudo mkdir -p /opt/jmusicbot
+cd /opt/jmusicbot
 
-# Stop and disable the existing service if it exists
-sudo systemctl stop jdiscordbot.service || true
-sudo systemctl disable jdiscordbot.service || true
+# Download JAR file from Azure Storage
+az storage blob download --account-name ${azurerm_storage_account.jmusicbot_storage.name} \
+                         --container-name ${azurerm_storage_container.jmusicbot_container.name} \
+                         --name ${local.jar_filename} \
+                         --file ${local.jar_filename} \
+                         --auth-mode login
 
-echo "Existing service stopped and disabled (if it existed)."
-
-# Remove existing files
-sudo rm -rf /home/${var.vm_admin_username}/tf-jdiscord
-
-echo "Old files removed."
-
-# Create directory structure
-sudo mkdir -p /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot
-cd /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot
-
-echo "Directory structure created."
-
-# Download JMusicBot JAR file
-sudo curl -L -o $JAR_FILE https://github.com/jagrosh/MusicBot/releases/download/0.4.3/JMusicBot-0.4.3.jar
-
-echo "JMusicBot JAR file downloaded."
-
-# Create new config file
-cat << EOF | sudo tee config.txt
+# Create config file
+cat << EOF > config.txt
 token = ${var.discord_bot_token}
 owner = ${var.discord_bot_owner}
 prefix = "${var.discord_bot_prefix}"
 EOF
 
-echo "Config file created."
-
-# Set proper permissions
-sudo chown -R ${var.vm_admin_username}:${var.vm_admin_username} /home/${var.vm_admin_username}/tf-jdiscord
-sudo chmod 644 config.txt
-sudo chmod 755 /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot
-sudo chmod 644 $JAR_FILE
-
-echo "Permissions set."
-
-# Verify the JAR file exists
-if [ ! -f "$JAR_FILE" ]; then
-    echo "Error: JMusicBot JAR file not found" >&2
-    exit 1
-fi
-
-echo "JAR file verified."
-
-# Create new service file
-cat << EOF | sudo tee /etc/systemd/system/jdiscordbot.service
+# Create systemd service file
+cat << EOF | sudo tee /etc/systemd/system/jmusicbot.service
 [Unit]
-Description=JDiscordBot Service
+Description=JMusicBot Service
 After=network.target
 
 [Service]
-Type=simple
-User=${var.vm_admin_username}
-WorkingDirectory=/home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot
-ExecStart=/usr/bin/java -jar $JAR_FILE
-Restart=on-failure
-RestartSec=5
+ExecStart=/usr/bin/java -Dnogui=true -jar /opt/jmusicbot/${local.jar_filename}
+WorkingDirectory=/opt/jmusicbot
+User=nobody
+Group=nogroup
+Restart=always
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-echo "Service file created."
-
-# Reload systemd
+# Reload systemd, enable and start the service
 sudo systemctl daemon-reload
+sudo systemctl enable jmusicbot.service
+sudo systemctl start jmusicbot.service
 
-# Enable and start the service
-sudo systemctl enable jdiscordbot.service
-sudo systemctl start jdiscordbot.service
-
-echo "Service enabled and started."
-
-# Check if the service is running
-if systemctl is-active --quiet jdiscordbot.service; then
-    echo "JDiscordBot service is running."
-else
-    echo "Error: JDiscordBot service failed to start. Check the logs for more information." >&2
-    journalctl -u jdiscordbot.service --no-pager | tail -n 50
-    exit 1
-fi
-
-# Execute custom removal command if provided
-${var.remove_tfjdiscord_command}
-
-echo "JDiscordBot setup completed successfully"
+echo "JMusicBot setup completed."
 EOT
     )
   })
 
-  depends_on = [azurerm_linux_virtual_machine.vm1]
+  depends_on = [
+    azurerm_storage_blob.jmusicbot_jar,
+    azurerm_linux_virtual_machine.vm1
+  ]
 }
 # Create a random string for the storage account name
 resource "random_string" "sa_suffix" {

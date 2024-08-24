@@ -144,10 +144,8 @@ resource "azurerm_virtual_machine_extension" "run_jdiscordbot" {
 
   settings = jsonencode({
     "script" : base64encode(<<-EOT
+#!/bin/bash
 set -e
-
-# Enable error logging
-exec 2>/tmp/vm_extension_error.log
 
 # Update and install dependencies
 sudo add-apt-repository -y ppa:openjdk-r/ppa
@@ -173,16 +171,9 @@ prefix = "${var.discord_bot_prefix}"
 EOF
 
 # Set proper permissions
-sudo chown -R ${var.vm_admin_username}:${var.vm_admin_username} /home/${var.vm_admin_username}/tf-jdiscord
+sudo chown ${var.vm_admin_username}:${var.vm_admin_username} /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt
 sudo chmod 644 /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt
-sudo chmod 755 /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot
-
-# Verify the correct JAR file name and path
-JAR_PATH="/home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/${var.jar_path}"
-if [ ! -f "$JAR_PATH" ]; then
-    echo "Error: JAR file not found at $JAR_PATH" >&2
-    exit 1
-fi
+sudo chown -R ${var.vm_admin_username}:${var.vm_admin_username} /home/${var.vm_admin_username}/tf-jdiscord
 
 # Create new service file
 cat << EOF | sudo tee /etc/systemd/system/jdiscordbot.service
@@ -194,7 +185,7 @@ After=network.target
 Type=simple
 User=${var.vm_admin_username}
 WorkingDirectory=/home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot
-ExecStart=/usr/bin/java -jar $JAR_PATH
+ExecStart=/usr/bin/java -jar /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/${var.jar_path}
 Restart=on-failure
 
 [Install]

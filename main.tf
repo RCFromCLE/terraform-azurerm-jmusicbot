@@ -156,25 +156,21 @@ echo "Starting JDiscordBot setup script..."
 JAR_FILE="${var.jar_path}"
 
 # Update and install dependencies
+export DEBIAN_FRONTEND=noninteractive
 sudo apt-get update
 sudo apt-get install -y default-jdk curl
 
 echo "Java installed successfully."
 
-# Stop the existing service if it exists
-if systemctl is-active --quiet jdiscordbot.service; then
-    sudo systemctl stop jdiscordbot.service
-    echo "Existing service stopped."
-fi
+# Stop and disable the existing service if it exists
+sudo systemctl stop jdiscordbot.service || true
+sudo systemctl disable jdiscordbot.service || true
 
-# Disable the existing service if it exists
-if systemctl is-enabled --quiet jdiscordbot.service; then
-    sudo systemctl disable jdiscordbot.service
-    echo "Existing service disabled."
-fi
+echo "Existing service stopped and disabled (if it existed)."
 
 # Remove existing files
 sudo rm -rf /home/${var.vm_admin_username}/tf-jdiscord
+
 echo "Old files removed."
 
 # Create directory structure
@@ -184,7 +180,8 @@ cd /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot
 echo "Directory structure created."
 
 # Download JMusicBot JAR file
-sudo curl -L -o $JAR_FILE https://github.com/jagrosh/MusicBot/releases/download/0.4.3/$JAR_FILE
+sudo curl -L -o $JAR_FILE https://github.com/jagrosh/MusicBot/releases/download/0.4.3/JMusicBot-0.4.3.jar
+
 echo "JMusicBot JAR file downloaded."
 
 # Create new config file
@@ -235,13 +232,11 @@ echo "Service file created."
 # Reload systemd
 sudo systemctl daemon-reload
 
-# Enable the service
+# Enable and start the service
 sudo systemctl enable jdiscordbot.service
-echo "Service enabled."
-
-# Start the service
 sudo systemctl start jdiscordbot.service
-echo "Service started."
+
+echo "Service enabled and started."
 
 # Check if the service is running
 if systemctl is-active --quiet jdiscordbot.service; then

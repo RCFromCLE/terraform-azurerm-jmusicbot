@@ -35,7 +35,7 @@ data "http" "latest_release" {
 }
 
 locals {
-  latest_version = jsondecode(data.http.latest_release.body).tag_name
+  latest_version = jsondecode(data.http.latest_release.response_body).tag_name
   jar_filename   = "JMusicBot-${local.latest_version}.jar"
   download_url   = "https://github.com/jagrosh/MusicBot/releases/download/${local.latest_version}/${local.jar_filename}"
 }
@@ -191,8 +191,8 @@ resource "azurerm_role_assignment" "vm_storage_blob_reader" {
   scope                = azurerm_storage_account.jmusicbot_storage.id
   role_definition_name = "Storage Blob Data Reader"
   principal_id         = azurerm_linux_virtual_machine.vm1.identity[0].principal_id
+  depends_on = [azurerm_linux_virtual_machine.vm1]
 }
-
 # VM extension to set up JMusicBot
 resource "azurerm_virtual_machine_extension" "setup_jmusicbot" {
   name                 = "setup_jmusicbot"

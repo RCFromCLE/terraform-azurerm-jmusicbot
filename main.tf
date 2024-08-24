@@ -147,33 +147,66 @@ resource "azurerm_virtual_machine_extension" "run_jdiscordbot" {
 #!/bin/bash
 set -e
 
+# Enable error logging
+exec 2>/tmp/vm_extension_error.log
+
+echo "Starting JDiscordBot setup script..."
+
+# Use the jar_path variable passed from Terraform
+JAR_FILE="${var.jar_path}"
+
 # Update and install dependencies
 sudo add-apt-repository -y ppa:openjdk-r/ppa
 sudo apt-get update
-sudo apt-get install -y default-jdk
+sudo apt-get install -y default-jdk curl
+
+echo "Java installed successfully."
 
 # Stop and disable the existing service
 sudo systemctl stop jdiscordbot.service || true
 sudo systemctl disable jdiscordbot.service || true
 
+echo "Existing service stopped and disabled."
+
 # Remove existing files
 sudo rm -rf /home/${var.vm_admin_username}/tf-jdiscord
 
-# Clone the repository again
-sudo git clone ${var.repo_url} /home/${var.vm_admin_username}/tf-jdiscord
+echo "Old files removed."
+
+# Create directory structure
 sudo mkdir -p /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot
+cd /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot
+
+echo "Directory structure created."
+
+# Download JMusicBot JAR file
+sudo curl -L -o $JAR_FILE https://github.com/jagrosh/MusicBot/releases/download/0.4.3/$JAR_FILE
+
+echo "JMusicBot JAR file downloaded."
 
 # Create new config file
-cat << EOF | sudo tee /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt
+cat << EOF | sudo tee config.txt
 token = ${var.discord_bot_token}
 owner = ${var.discord_bot_owner}
 prefix = "${var.discord_bot_prefix}"
 EOF
 
+echo "Config file created."
+
 # Set proper permissions
-sudo chown ${var.vm_admin_username}:${var.vm_admin_username} /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt
-sudo chmod 644 /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/config.txt
 sudo chown -R ${var.vm_admin_username}:${var.vm_admin_username} /home/${var.vm_admin_username}/tf-jdiscord
+sudo chmod 644 config.txt
+sudo chmod 755 /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot
+
+echo "Permissions set."
+
+# Verify the JAR file exists
+if [ ! -f "$JAR_FILE" ]; then
+    echo "Error: JMusicBot JAR file not found" >&2
+    exit 1
+fi
+
+echo "JAR file verified."
 
 # Create new service file
 cat << EOF | sudo tee /etc/systemd/system/jdiscordbot.service
@@ -185,17 +218,21 @@ After=network.target
 Type=simple
 User=${var.vm_admin_username}
 WorkingDirectory=/home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot
-ExecStart=/usr/bin/java -jar /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot/${var.jar_path}
+ExecStart=/usr/bin/java -jar $JAR_FILE
 Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
+echo "Service file created."
+
 # Reload systemd, enable and start the service
 sudo systemctl daemon-reload
 sudo systemctl enable jdiscordbot.service
 sudo systemctl start jdiscordbot.service
+
+echo "Service enabled and started."
 
 # Verify the service is running
 sudo systemctl status jdiscordbot.service

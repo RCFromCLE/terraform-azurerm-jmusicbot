@@ -271,7 +271,7 @@ EOT
   depends_on = [
     azurerm_storage_blob.jmusicbot_jar,
     azurerm_linux_virtual_machine.vm1,
-    azurerm_role_assignment.vm_storage_blob_reader
+    # azurerm_role_assignment.vm_storage_blob_reader
   ]
 }
 

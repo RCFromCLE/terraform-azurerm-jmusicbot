@@ -178,14 +178,29 @@ resource "azurerm_storage_container" "jmusicbot_container" {
 }
 
 # Upload the JAR file to the storage account
-resource "azurerm_storage_blob" "jmusicbot_jar" {
-  name                   = local.jar_filename
-  storage_account_name   = azurerm_storage_account.jmusicbot_storage.name
-  storage_container_name = azurerm_storage_container.jmusicbot_container.name
-  type                   = "Block"
-  source_uri             = local.download_url
-}
+resource "null_resource" "download_and_upload_jar" {
+  triggers = {
+    jar_filename = local.jar_filename
+    download_url = local.download_url
+  }
 
+  provisioner "local-exec" {
+    command = <<EOT
+      curl -L -o ${local.jar_filename} ${local.download_url}
+      az storage blob upload \
+        --account-name ${azurerm_storage_account.jmusicbot_storage.name} \
+        --container-name ${azurerm_storage_container.jmusicbot_container.name} \
+        --name ${local.jar_filename} \
+        --file ${local.jar_filename} \
+        --auth-mode login
+    EOT
+  }
+
+  depends_on = [
+    azurerm_storage_container.jmusicbot_container,
+    azurerm_role_assignment.vm_storage_blob_reader
+  ]
+}
 # Role assignment for VM to access storage
 # resource "azurerm_role_assignment" "vm_storage_blob_reader" {
 #   scope                = azurerm_storage_account.jmusicbot_storage.id
@@ -269,7 +284,6 @@ EOT
   })
 
   depends_on = [
-    azurerm_storage_blob.jmusicbot_jar,
     azurerm_linux_virtual_machine.vm1,
     # azurerm_role_assignment.vm_storage_blob_reader
   ]

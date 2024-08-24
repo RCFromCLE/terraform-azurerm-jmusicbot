@@ -200,14 +200,22 @@ resource "null_resource" "download_and_upload_jar" {
     azurerm_storage_container.jmusicbot_container
   ]
 }
-# Role assignment for VM to access storage
-# resource "azurerm_role_assignment" "vm_storage_blob_reader" {
-#   scope                = azurerm_storage_account.jmusicbot_storage.id
-#   role_definition_name = "Storage Blob Data Reader"
-#   principal_id         = azurerm_linux_virtual_machine.vm1.identity[0].principal_id
-#   depends_on = [azurerm_linux_virtual_machine.vm1]
-# }
-# VM extension to set up JMusicBot
+data "azurerm_storage_account_blob_container_sas" "jmusicbot_sas" {
+  connection_string = azurerm_storage_account.jmusicbot_storage.primary_connection_string
+  container_name    = azurerm_storage_container.jmusicbot_container.name
+  
+  start  = timestamp()
+  expiry = timeadd(timestamp(), "8760h")  # 1 year from now
+
+  permissions {
+    read   = true
+    add    = false
+    create = false
+    write  = false
+    delete = false
+    list   = false
+  }
+}
 resource "azurerm_virtual_machine_extension" "setup_jmusicbot" {
   name                 = "setup_jmusicbot"
   virtual_machine_id   = azurerm_linux_virtual_machine.vm1.id
@@ -222,9 +230,6 @@ set -e
 
 echo "Starting JMusicBot setup..."
 
-# Install Azure CLI
-curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-
 # Install Java
 sudo apt-get update
 sudo apt-get install -y default-jre
@@ -233,15 +238,8 @@ sudo apt-get install -y default-jre
 sudo mkdir -p /opt/jmusicbot
 cd /opt/jmusicbot
 
-# Use managed identity to authenticate Azure CLI
-az login --identity
-
-# Download JAR file from Azure Storage
-az storage blob download --account-name ${azurerm_storage_account.jmusicbot_storage.name} \
-                         --container-name ${azurerm_storage_container.jmusicbot_container.name} \
-                         --name ${local.jar_filename} \
-                         --file ${local.jar_filename} \
-                         --auth-mode login
+# Download JAR file from Azure Storage using SAS token
+wget "${azurerm_storage_blob.jmusicbot_jar.url}${data.azurerm_storage_account_blob_container_sas.jmusicbot_sas.sas}" -O ${local.jar_filename}
 
 # Create config file
 cat << EOF > config.txt
@@ -283,8 +281,8 @@ EOT
   })
 
   depends_on = [
-    azurerm_linux_virtual_machine.vm1,
-    # azurerm_role_assignment.vm_storage_blob_reader
+    azurerm_storage_blob.jmusicbot_jar,
+    azurerm_linux_virtual_machine.vm1
   ]
 }
 

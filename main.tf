@@ -156,21 +156,25 @@ echo "Starting JDiscordBot setup script..."
 JAR_FILE="${var.jar_path}"
 
 # Update and install dependencies
-sudo add-apt-repository -y ppa:openjdk-r/ppa
 sudo apt-get update
 sudo apt-get install -y default-jdk curl
 
 echo "Java installed successfully."
 
-# Stop and disable the existing service
-sudo systemctl stop jdiscordbot.service || true
-sudo systemctl disable jdiscordbot.service || true
+# Stop the existing service if it exists
+if systemctl is-active --quiet jdiscordbot.service; then
+    sudo systemctl stop jdiscordbot.service
+    echo "Existing service stopped."
+fi
 
-echo "Existing service stopped and disabled."
+# Disable the existing service if it exists
+if systemctl is-enabled --quiet jdiscordbot.service; then
+    sudo systemctl disable jdiscordbot.service
+    echo "Existing service disabled."
+fi
 
 # Remove existing files
 sudo rm -rf /home/${var.vm_admin_username}/tf-jdiscord
-
 echo "Old files removed."
 
 # Create directory structure
@@ -181,7 +185,6 @@ echo "Directory structure created."
 
 # Download JMusicBot JAR file
 sudo curl -L -o $JAR_FILE https://github.com/jagrosh/MusicBot/releases/download/0.4.3/$JAR_FILE
-
 echo "JMusicBot JAR file downloaded."
 
 # Create new config file
@@ -197,6 +200,7 @@ echo "Config file created."
 sudo chown -R ${var.vm_admin_username}:${var.vm_admin_username} /home/${var.vm_admin_username}/tf-jdiscord
 sudo chmod 644 config.txt
 sudo chmod 755 /home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot
+sudo chmod 644 $JAR_FILE
 
 echo "Permissions set."
 
@@ -220,6 +224,7 @@ User=${var.vm_admin_username}
 WorkingDirectory=/home/${var.vm_admin_username}/tf-jdiscord/jdiscordmusicbot
 ExecStart=/usr/bin/java -jar $JAR_FILE
 Restart=on-failure
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
@@ -227,15 +232,25 @@ EOF
 
 echo "Service file created."
 
-# Reload systemd, enable and start the service
+# Reload systemd
 sudo systemctl daemon-reload
+
+# Enable the service
 sudo systemctl enable jdiscordbot.service
+echo "Service enabled."
+
+# Start the service
 sudo systemctl start jdiscordbot.service
+echo "Service started."
 
-echo "Service enabled and started."
-
-# Verify the service is running
-sudo systemctl status jdiscordbot.service
+# Check if the service is running
+if systemctl is-active --quiet jdiscordbot.service; then
+    echo "JDiscordBot service is running."
+else
+    echo "Error: JDiscordBot service failed to start. Check the logs for more information." >&2
+    journalctl -u jdiscordbot.service --no-pager | tail -n 50
+    exit 1
+fi
 
 # Execute custom removal command if provided
 ${var.remove_tfjdiscord_command}
@@ -244,6 +259,7 @@ echo "JDiscordBot setup completed successfully"
 EOT
     )
   })
+
   depends_on = [azurerm_linux_virtual_machine.vm1]
 }
 # Create a random string for the storage account name

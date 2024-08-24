@@ -163,7 +163,7 @@ resource "azurerm_linux_virtual_machine" "vm1" {
 
 # Storage account for JMusicBot
 resource "azurerm_storage_account" "jmusicbot_storage" {
-  name                     = "jmusicbot${random_string.sa_suffix.result}"
+  name                     = "jmusicbotstorage${random_string.sa_suffix.result}"
   resource_group_name      = azurerm_resource_group.rg1.name
   location                 = azurerm_resource_group.rg1.location
   account_tier             = "Standard"
@@ -187,12 +187,12 @@ resource "azurerm_storage_blob" "jmusicbot_jar" {
 }
 
 # Role assignment for VM to access storage
-resource "azurerm_role_assignment" "vm_storage_blob_reader" {
-  scope                = azurerm_storage_account.jmusicbot_storage.id
-  role_definition_name = "Storage Blob Data Reader"
-  principal_id         = azurerm_linux_virtual_machine.vm1.identity[0].principal_id
-  depends_on = [azurerm_linux_virtual_machine.vm1]
-}
+# resource "azurerm_role_assignment" "vm_storage_blob_reader" {
+#   scope                = azurerm_storage_account.jmusicbot_storage.id
+#   role_definition_name = "Storage Blob Data Reader"
+#   principal_id         = azurerm_linux_virtual_machine.vm1.identity[0].principal_id
+#   depends_on = [azurerm_linux_virtual_machine.vm1]
+# }
 # VM extension to set up JMusicBot
 resource "azurerm_virtual_machine_extension" "setup_jmusicbot" {
   name                 = "setup_jmusicbot"

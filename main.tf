@@ -197,8 +197,7 @@ resource "null_resource" "download_and_upload_jar" {
   }
 
   depends_on = [
-    azurerm_storage_container.jmusicbot_container,
-    azurerm_role_assignment.vm_storage_blob_reader
+    azurerm_storage_container.jmusicbot_container
   ]
 }
 # Role assignment for VM to access storage

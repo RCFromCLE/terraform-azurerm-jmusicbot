@@ -178,33 +178,24 @@ resource "azurerm_storage_container" "jmusicbot_container" {
 }
 
 # Upload the JAR file to the storage account
-resource "null_resource" "download_and_upload_jar" {
-  triggers = {
-    jar_filename = local.jar_filename
-    download_url = local.download_url
-  }
-
-  provisioner "local-exec" {
-    command = <<EOT
-      curl -L -o ${local.jar_filename} ${local.download_url}
-      az storage blob upload \
-        --account-name ${azurerm_storage_account.jmusicbot_storage.name} \
-        --container-name ${azurerm_storage_container.jmusicbot_container.name} \
-        --name ${local.jar_filename} \
-        --file ${local.jar_filename} \
-        --auth-mode login
-    EOT
-  }
-
-  depends_on = [
-    azurerm_storage_container.jmusicbot_container
-  ]
+resource "azurerm_storage_blob" "jmusicbot_jar" {
+  name                   = local.jar_filename
+  storage_account_name   = azurerm_storage_account.jmusicbot_storage.name
+  storage_container_name = azurerm_storage_container.jmusicbot_container.name
+  type                   = "Block"
+  source_uri             = local.download_url
 }
+
+# Role assignment for VM to access storage
 resource "azurerm_role_assignment" "vm_storage_blob_reader" {
   scope                = azurerm_storage_account.jmusicbot_storage.id
   role_definition_name = "Storage Blob Data Reader"
   principal_id         = azurerm_linux_virtual_machine.vm1.identity[0].principal_id
+
+  depends_on = [azurerm_storage_blob.jmusicbot_jar]
 }
+
+# Generate SAS token for the storage container
 data "azurerm_storage_account_blob_container_sas" "jmusicbot_sas" {
   connection_string = azurerm_storage_account.jmusicbot_storage.primary_connection_string
   container_name    = azurerm_storage_container.jmusicbot_container.name
@@ -221,6 +212,8 @@ data "azurerm_storage_account_blob_container_sas" "jmusicbot_sas" {
     list   = false
   }
 }
+
+# VM extension to set up JMusicBot
 resource "azurerm_virtual_machine_extension" "setup_jmusicbot" {
   name                 = "setup_jmusicbot"
   virtual_machine_id   = azurerm_linux_virtual_machine.vm1.id

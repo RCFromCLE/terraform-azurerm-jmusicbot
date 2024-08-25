@@ -161,52 +161,6 @@ resource "azurerm_linux_virtual_machine" "vm1" {
   }
 }
 
-# Storage account for JMusicBot
-resource "azurerm_storage_account" "jmusicbot_storage" {
-  name                     = "jmusicbotstorage${random_string.sa_suffix.result}"
-  resource_group_name      = azurerm_resource_group.rg1.name
-  location                 = azurerm_resource_group.rg1.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-}
-
-# Container in the storage account
-resource "azurerm_storage_container" "jmusicbot_container" {
-  name                  = "jmusicbot-files"
-  storage_account_name  = azurerm_storage_account.jmusicbot_storage.name
-  container_access_type = "private"
-}
-
-# Upload the JAR file to the storage account
-resource "azurerm_storage_blob" "jmusicbot_jar" {
-  name                   = local.jar_filename
-  storage_account_name   = azurerm_storage_account.jmusicbot_storage.name
-  storage_container_name = azurerm_storage_container.jmusicbot_container.name
-  type                   = "Block"
-  source_uri             = local.download_url
-}
-
-# Generate SAS token for the storage container
-data "azurerm_storage_account_blob_container_sas" "jmusicbot_sas" {
-  connection_string = azurerm_storage_account.jmusicbot_storage.primary_connection_string
-  container_name    = azurerm_storage_container.jmusicbot_container.name
-  
-  start  = timestamp()
-  expiry = timeadd(timestamp(), "8760h")  # 1 year from now
-
-  permissions {
-    read   = true
-    add    = false
-    create = false
-    write  = false
-    delete = false
-    list   = false
-  }
-}
-
-# VM extension to set up JMusicBot
-# VM extension to set up JMusicBot
-# VM extension to set up JMusicBot
 # VM extension to set up JMusicBot
 resource "azurerm_virtual_machine_extension" "setup_jmusicbot" {
   name                 = "setup_jmusicbot"

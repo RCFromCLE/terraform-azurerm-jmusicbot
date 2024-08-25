@@ -286,7 +286,6 @@ EOT
   })
 
   depends_on = [
-    azurerm_storage_blob.jmusicbot_jar,
     azurerm_linux_virtual_machine.vm1
   ]
 }

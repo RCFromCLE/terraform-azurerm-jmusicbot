@@ -232,43 +232,54 @@ resource "azurerm_virtual_machine_extension" "setup_jmusicbot" {
     "script" : base64encode(<<-EOT
 #!/bin/bash
 set -e
+
 echo "Starting JMusicBot setup..."
+
 # Install Java
 sudo apt-get update
 sudo apt-get install -y default-jre
+
 # Create directory for JMusicBot
 sudo mkdir -p /opt/jmusicbot
 cd /opt/jmusicbot
+
 # Download JAR file from Azure Storage using SAS token
-wget "${azurerm_storage_account.jmusicbot_storage.primary_blob_endpoint}${azurerm_storage_container.jmusicbot_container.name}/${local.jar_filename}${data.azurerm_storage_account_blob_container_sas.jmusicbot_sas.sas}" -O ${local.jar_filename}
+wget "${azurerm_storage_blob.jmusicbot_jar.url}${data.azurerm_storage_account_blob_container_sas.jmusicbot_sas.sas}" -O ${local.jar_filename}
+
 # Create config file
 cat << EOF > config.txt
 token = ${var.discord_bot_token}
 owner = ${var.discord_bot_owner}
 prefix = "${var.discord_bot_prefix}"
 EOF
+
 # Create systemd service file
 cat << EOF | sudo tee /etc/systemd/system/jmusicbot.service
 [Unit]
 Description=JMusicBot Service
 After=network.target
+
 [Service]
 ExecStart=/usr/bin/java -Dnogui=true -jar /opt/jmusicbot/${local.jar_filename}
 WorkingDirectory=/opt/jmusicbot
 User=nobody
 Group=nogroup
 Restart=always
+
 [Install]
 WantedBy=multi-user.target
 EOF
+
 # Set proper permissions
 sudo chown -R nobody:nogroup /opt/jmusicbot
 sudo chmod 644 /opt/jmusicbot/${local.jar_filename}
 sudo chmod 644 /opt/jmusicbot/config.txt
+
 # Reload systemd, enable and start the service
 sudo systemctl daemon-reload
 sudo systemctl enable jmusicbot.service
 sudo systemctl start jmusicbot.service
+
 echo "JMusicBot setup completed."
 EOT
     )
@@ -276,7 +287,7 @@ EOT
 
   depends_on = [
     azurerm_linux_virtual_machine.vm1,
-    null_resource.download_and_upload_jar,
+    azurerm_storage_blob.jmusicbot_jar,
     azurerm_role_assignment.vm_storage_blob_reader
   ]
 }

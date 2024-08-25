@@ -214,6 +214,7 @@ data "azurerm_storage_account_blob_container_sas" "jmusicbot_sas" {
 }
 
 # VM extension to set up JMusicBot
+# VM extension to set up JMusicBot
 resource "azurerm_virtual_machine_extension" "setup_jmusicbot" {
   name                 = "setup_jmusicbot"
   virtual_machine_id   = azurerm_linux_virtual_machine.vm1.id
@@ -228,16 +229,16 @@ set -e
 
 echo "Starting JMusicBot setup..."
 
-# Install Java
+# Install Java and curl
 sudo apt-get update
-sudo apt-get install -y default-jre
+sudo apt-get install -y default-jre curl
 
 # Create directory for JMusicBot
 sudo mkdir -p /opt/jmusicbot
 cd /opt/jmusicbot
 
-# Download JAR file from Azure Storage using SAS token
-wget "${azurerm_storage_blob.jmusicbot_jar.url}${data.azurerm_storage_account_blob_container_sas.jmusicbot_sas.sas}" -O ${local.jar_filename}
+# Download JAR file directly from GitHub
+curl -L -o ${local.jar_filename} ${local.download_url}
 
 # Create config file
 cat << EOF > config.txt
@@ -279,12 +280,9 @@ EOT
   })
 
   depends_on = [
-    azurerm_linux_virtual_machine.vm1,
-    azurerm_storage_blob.jmusicbot_jar,
-    azurerm_role_assignment.vm_storage_blob_reader
+    azurerm_linux_virtual_machine.vm1
   ]
 }
-
 # Storage account for function app
 resource "azurerm_storage_account" "functionapp_sa" {
   name                     = "jdiscord${random_string.sa_suffix.result}"

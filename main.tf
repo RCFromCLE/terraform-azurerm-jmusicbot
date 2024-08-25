@@ -173,7 +173,6 @@ resource "azurerm_virtual_machine_extension" "setup_jmusicbot" {
     "script" : base64encode(<<-EOT
 #!/bin/bash
 set -e
-
 echo "Starting JMusicBot setup..."
 
 # Install Java and curl
@@ -184,8 +183,13 @@ sudo apt-get install -y default-jre curl
 sudo mkdir -p /opt/jmusicbot
 cd /opt/jmusicbot
 
+# Define JMusicBot version and download URL
+JMUSICBOT_VERSION="0.4.3"
+JAR_FILENAME="JMusicBot-$${JMUSICBOT_VERSION}.jar"
+DOWNLOAD_URL="https://github.com/jagrosh/MusicBot/releases/download/$${JMUSICBOT_VERSION}/$${JAR_FILENAME}"
+
 # Download JAR file directly from GitHub
-curl -L -o ${local.jar_filename} ${local.download_url}
+curl -L -o "$${JAR_FILENAME}" "$${DOWNLOAD_URL}"
 
 # Create config file
 cat << EOF > config.txt
@@ -201,7 +205,7 @@ Description=JMusicBot Service
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/java -Dnogui=true -jar /opt/jmusicbot/${local.jar_filename}
+ExecStart=/usr/bin/java -Dnogui=true -jar /opt/jmusicbot/$${JAR_FILENAME}
 WorkingDirectory=/opt/jmusicbot
 User=nobody
 Group=nogroup
@@ -213,7 +217,7 @@ EOF
 
 # Set proper permissions
 sudo chown -R nobody:nogroup /opt/jmusicbot
-sudo chmod 644 /opt/jmusicbot/${local.jar_filename}
+sudo chmod 644 /opt/jmusicbot/$${JAR_FILENAME}
 sudo chmod 644 /opt/jmusicbot/config.txt
 
 # Reload systemd, enable and start the service

@@ -244,7 +244,7 @@ sudo mkdir -p /opt/jmusicbot
 cd /opt/jmusicbot
 
 # Download JAR file from Azure Storage using SAS token
-wget "${azurerm_storage_blob.jmusicbot_jar.url}${data.azurerm_storage_account_blob_container_sas.jmusicbot_sas.sas}" -O ${local.jar_filename}
+wget "${azurerm_storage_account.jmusicbot_storage.primary_blob_endpoint}${azurerm_storage_container.jmusicbot_container.name}/${local.jar_filename}${data.azurerm_storage_account_blob_container_sas.jmusicbot_sas.sas}" -O ${local.jar_filename}
 
 # Create config file
 cat << EOF > config.txt
@@ -286,7 +286,9 @@ EOT
   })
 
   depends_on = [
-    azurerm_linux_virtual_machine.vm1
+    azurerm_linux_virtual_machine.vm1,
+    null_resource.download_and_upload_jar,
+    azurerm_role_assignment.vm_storage_blob_reader
   ]
 }
 

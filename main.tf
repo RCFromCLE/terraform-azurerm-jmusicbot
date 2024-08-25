@@ -186,15 +186,6 @@ resource "azurerm_storage_blob" "jmusicbot_jar" {
   source_uri             = local.download_url
 }
 
-# Role assignment for VM to access storage
-resource "azurerm_role_assignment" "vm_storage_blob_reader" {
-  scope                = azurerm_storage_account.jmusicbot_storage.id
-  role_definition_name = "Storage Blob Data Reader"
-  principal_id         = azurerm_linux_virtual_machine.vm1.identity[0].principal_id
-
-  depends_on = [azurerm_storage_blob.jmusicbot_jar]
-}
-
 # Generate SAS token for the storage container
 data "azurerm_storage_account_blob_container_sas" "jmusicbot_sas" {
   connection_string = azurerm_storage_account.jmusicbot_storage.primary_connection_string
@@ -213,6 +204,8 @@ data "azurerm_storage_account_blob_container_sas" "jmusicbot_sas" {
   }
 }
 
+# VM extension to set up JMusicBot
+# VM extension to set up JMusicBot
 # VM extension to set up JMusicBot
 # VM extension to set up JMusicBot
 resource "azurerm_virtual_machine_extension" "setup_jmusicbot" {

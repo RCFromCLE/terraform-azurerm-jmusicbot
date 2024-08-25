@@ -200,6 +200,11 @@ resource "null_resource" "download_and_upload_jar" {
     azurerm_storage_container.jmusicbot_container
   ]
 }
+resource "azurerm_role_assignment" "vm_storage_blob_reader" {
+  scope                = azurerm_storage_account.jmusicbot_storage.id
+  role_definition_name = "Storage Blob Data Reader"
+  principal_id         = azurerm_linux_virtual_machine.vm1.identity[0].principal_id
+}
 data "azurerm_storage_account_blob_container_sas" "jmusicbot_sas" {
   connection_string = azurerm_storage_account.jmusicbot_storage.primary_connection_string
   container_name    = azurerm_storage_container.jmusicbot_container.name
